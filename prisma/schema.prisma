@@ -127,14 +127,23 @@ model PurchaseHistories {
 }
 
 model Notifications {
-  id          Int      @id @default(autoincrement())
+  id          Int                @id @default(autoincrement())
   receiver_id Int //FK user테이블
-  category    String
+  category    NotificationStatus @default(PURCHASED)
   is_read     Boolean
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 
   receiver User @relation(fields: [receiver_id], references: [id])
+}
+
+enum NotificationStatus {
+  PURCHASED // 구매 완료
+  SOLD // 판매 완료
+  SOLD_OUT // 품절
+  TRADE_OFFERED // 교환 제안됨
+  TRADE_ACCEPTED // 교환 성사
+  TRADE_REJECTED // 교환 거절
 }
 
 model Points {
