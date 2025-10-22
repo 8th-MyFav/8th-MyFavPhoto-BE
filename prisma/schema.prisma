@@ -32,7 +32,7 @@ model User {
 }
 
 model Photocards {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   creator_id  Int // FK User
   name        String
   grade       Grade
@@ -41,6 +41,8 @@ model Photocards {
   image_url   String?
   description String?
   total_count Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   creater        User             @relation(fields: [creator_id], references: [id])
   userPhotocards UserPhotocards[]
@@ -62,11 +64,13 @@ enum Ganre {
 }
 
 model UserPhotocards {
-  id            Int     @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
   owner_id      Int // FK user
   photocards_id Int // FK Photocards
   trade_info_id Int // FK TradesPosts
   is_sale       Boolean
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   owner     User       @relation(fields: [owner_id], references: [id])
   photocard Photocards @relation(fields: [photocards_id], references: [id])
@@ -78,11 +82,13 @@ model UserPhotocards {
 }
 
 model TradePosts {
-  id          Int    @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   // price          Int
   trade_grade Grade
   trade_ganre Ganre
   trade_note  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   UserPhotocards UserPhotocards[] // userPhotocard
 }
@@ -94,6 +100,8 @@ model TradeHistories {
   target_card_id  Int //FK UserPhotocards 테이블
   trade_status    TradeStatus @default(PENDING)
   trade_content   String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   // FK 관계 명시
   requester   User           @relation(fields: [requester_id], references: [id])
@@ -108,26 +116,32 @@ enum TradeStatus {
 }
 
 model PurchaseHistories {
-  id               Int @id @default(autoincrement())
+  id               Int      @id @default(autoincrement())
   purchaser_id     Int //FK user 테이블
   purchase_card_id Int //FK cards 테이블
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   purchaser    User           @relation(fields: [purchaser_id], references: [id])
   purchaseCard UserPhotocards @relation(fields: [purchase_card_id], references: [id])
 }
 
 model Notifications {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   receiver_id Int //FK user테이블
   category    String
   is_read     Boolean
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   receiver User @relation(fields: [receiver_id], references: [id])
 }
 
 model Points {
-  id        Int  @id @default(autoincrement()) //userid임
+  id        Int      @id @default(autoincrement()) //userid임
   acc_point Int?
-  user      User @relation(fields: [id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [id], references: [id])
 }
-  
