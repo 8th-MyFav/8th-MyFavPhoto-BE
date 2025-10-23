@@ -1,15 +1,16 @@
 import authService from "../services/authService.js";
 
-// 회원가입
+// NOTE: 회원가입
 export async function signUp(req, res, next) {
   try {
     const { email, password, nickname } = req.body;
+    // body로 data 들어왔는지 확인
     if (!email || !password || !nickname) {
       const error = new Error("유효한 값을 모두 작성해주세요.");
       error.code = 400;
       throw error;
     }
-    // authService 호출
+    // createUser 호출
     const user = await authService.createUser({ email, password, nickname });
 
     // 회원가입 성공시 return user data
@@ -19,8 +20,39 @@ export async function signUp(req, res, next) {
   }
 }
 
-// 로그인
-export async function login(req, res, next) {}
+// NOTE: 로그인
+export async function login(req, res, next) {
+  try {
+    const { email, password } = req.body;
+    // body로 data 들어왔는지 확인
+    if (!email || !password) {
+      const error = new Error("유효한 값을 모두 작성해주세요.");
+      error.code = 400;
+      throw error;
+    }
+
+    // loginUser 호출
+    const user = await authService.loginUser(email, password);
+
+    // token 발급
+    const accessToken = await authService.createToken(user);
+    const refreshToken = await authService.createToken(user, "refresh");
+
+    // refresh Token update
+    await authService.updateUser(user.id, { refreshToken });
+
+    // refresh Token cookie 로 전송
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "none",
+      // secure: true, // 테스트 환경에서는 사용 불가
+    });
+    // 나머지는 body 전송
+    res.status(200).json({ ...user, accessToken });
+  } catch (error) {
+    next(error);
+  }
+}
 
 // 리프레시 토크 갱신
 export async function refreshToken(req, res, next) {}
