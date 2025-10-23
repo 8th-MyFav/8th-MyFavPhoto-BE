@@ -54,8 +54,33 @@ export async function login(req, res, next) {
   }
 }
 
-// 리프레시 토크 갱신
-export async function refreshToken(req, res, next) {}
+// NOTE: 토큰 갱신
+export async function refreshToken(req, res, next) {
+  try {
+    // 쿠키의 refresh token 가져오기
+    const refreshToken = req.cookies.refreshToken;
+    const { userId } = req.auth;
 
-// 로그아웃
+    // token 갱신
+    const { newAccessToken, newRefreshToken } = await authService.refreshToken(
+      userId,
+      refreshToken
+    );
+
+    // 새 refreshToken 쿠키로 보내기
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      sameSite: "none",
+      // secure: true,
+      path: "/token/refresh",
+    });
+
+    // 새 accessToken body로 보내기
+    return res.json({ accessToken: newAccessToken });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+// NOTE: 로그아웃
 export async function logout(req, res, next) {}

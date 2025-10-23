@@ -35,6 +35,7 @@ async function update(id, data) {
   });
 }
 
+// OAuth에서 사용
 async function createOrUpdate(provider, providerId, email, name) {
   return prisma.user.upsert({
     where: { provider, providerId },

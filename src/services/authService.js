@@ -110,8 +110,8 @@ async function refreshToken(userId, refreshToken) {
     throw error;
   }
   // 새로운 accessToken, refreshToekn 발급
-  const newAccessToken = createToken(user);
-  const newRefreshToken = createToken(user, "refresh");
+  const newAccessToken = await createToken(user);
+  const newRefreshToken = await createToken(user, "refresh");
 
   return { newAccessToken, newRefreshToken };
 }
