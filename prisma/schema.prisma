@@ -34,8 +34,8 @@ model Photocards {
   id          Int      @id @default(autoincrement())
   creator_id  Int // FK User
   name        String
-  grade       Grade
-  genre       Genre
+  grade       Grade    @default(COMMON)
+  genre       Genre    @default(KPOP)
   price       Int
   image_url   String?
   description String?
@@ -83,8 +83,8 @@ model UserPhotocards {
 model TradePosts {
   id          Int      @id @default(autoincrement())
   // price          Int
-  trade_grade Grade
-  trade_genre Genre
+  trade_grade Grade @default(COMMON)
+  trade_genre Genre @default(KPOP)
   trade_note  String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
