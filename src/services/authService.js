@@ -102,18 +102,47 @@ async function createToken(user, type) {
 
 // NOTE: token 갱신
 async function refreshToken(userId, refreshToken) {
-  const user = await authRepository.findById(userId);
-  // DB user 정보, refresh token 확인
-  if (!user || user.refreshToken !== refreshToken) {
-    const error = new Error("유효하지 않은 refresh token입니다.");
-    error.code = 401;
-    throw error;
-  }
-  // 새로운 accessToken, refreshToekn 발급
-  const newAccessToken = await createToken(user);
-  const newRefreshToken = await createToken(user, "refresh");
+  try {
+    const user = await authRepository.findById(userId);
+    // DB user 정보, refresh token 확인
+    if (!user || user.refreshToken !== refreshToken) {
+      const error = new Error("유효하지 않은 refresh token입니다.");
+      error.code = 401;
+      throw error;
+    }
+    // 새로운 accessToken, refreshToekn 발급
+    const newAccessToken = await createToken(user);
+    const newRefreshToken = await createToken(user, "refresh");
 
-  return { newAccessToken, newRefreshToken };
+    return { newAccessToken, newRefreshToken };
+  } catch (error) {
+    if (error.code === 401) throw error;
+
+    const customError = new Error("데이터베이스 작업 중 오류가 발생했습니다");
+    customError.code = 500;
+    throw customError;
+  }
+}
+
+// NOTE: logout
+async function logout(userId) {
+  try {
+    const user = await authRepository.findById(userId);
+    // DB user 정보, refresh token 확인
+    if (!user) {
+      const error = new Error("로그인이 필요합니다.");
+      error.code = 401;
+      throw error;
+    }
+
+    return await authRepository.logout(userId);
+  } catch (error) {
+    if (error.code === 401) throw error;
+
+    const customError = new Error("데이터베이스 작업 중 오류가 발생했습니다");
+    customError.code = 500;
+    throw customError;
+  }
 }
 
 export default {
@@ -122,4 +151,5 @@ export default {
   updateUser,
   createToken,
   refreshToken,
+  logout,
 };

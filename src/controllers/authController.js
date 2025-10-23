@@ -83,4 +83,20 @@ export async function refreshToken(req, res, next) {
 }
 
 // NOTE: 로그아웃
-export async function logout(req, res, next) {}
+export async function logout(req, res, next) {
+  try {
+    const { userId } = req.auth;
+    await authService.logout(userId);
+
+    // cookie clear
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      sameSite: "none",
+      // secure: true,
+    });
+    // res
+    return res.json({ message: "로그아웃 완료" });
+  } catch (error) {
+    return next(error);
+  }
+}

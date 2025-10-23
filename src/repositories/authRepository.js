@@ -35,6 +35,15 @@ async function update(id, data) {
   });
 }
 
+async function logout(id) {
+  return prisma.user.update({
+    where: {
+      id,
+    },
+    data: { refreshToken: null },
+  });
+}
+
 // OAuth에서 사용
 async function createOrUpdate(provider, providerId, email, name) {
   return prisma.user.upsert({
@@ -49,5 +58,6 @@ export default {
   findByEmail,
   save,
   update,
+  logout,
   createOrUpdate,
 };
