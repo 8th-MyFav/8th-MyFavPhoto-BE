@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -35,8 +34,8 @@ model Photocards {
   id          Int      @id @default(autoincrement())
   creator_id  Int // FK User
   name        String
-  grade       Grade
-  ganre       Ganre
+  grade       Grade    @default(COMMON)
+  genre       Genre    @default(KPOP)
   price       Int
   image_url   String?
   description String?
@@ -55,7 +54,7 @@ enum Grade {
   LEGENDARY
 }
 
-enum Ganre {
+enum Genre {
   KPOP
   ACTOR
   ESPORTS
@@ -67,14 +66,14 @@ model UserPhotocards {
   id            Int      @id @default(autoincrement())
   owner_id      Int // FK user
   photocards_id Int // FK Photocards
-  trade_info_id Int // FK TradesPosts
+  trade_info_id Int? // FK TradesPosts
   is_sale       Boolean
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  owner     User       @relation(fields: [owner_id], references: [id])
-  photocard Photocards @relation(fields: [photocards_id], references: [id])
-  tradePost TradePosts @relation(fields: [trade_info_id], references: [id])
+  owner     User        @relation(fields: [owner_id], references: [id])
+  photocard Photocards  @relation(fields: [photocards_id], references: [id])
+  tradePost TradePosts? @relation(fields: [trade_info_id], references: [id])
 
   PurchaseHistories PurchaseHistories[]
   OfferedHistories  TradeHistories[]    @relation("OfferedTrades")
@@ -84,8 +83,8 @@ model UserPhotocards {
 model TradePosts {
   id          Int      @id @default(autoincrement())
   // price          Int
-  trade_grade Grade
-  trade_ganre Ganre
+  trade_grade Grade @default(COMMON)
+  trade_genre Genre @default(KPOP)
   trade_note  String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
