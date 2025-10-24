@@ -1,4 +1,6 @@
 import express from "express";
+import cors from "cors";
+import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import authRouter from "./routes/authRoute.js";
 import errorHandler from "./middlewares/errorHandler.js";
@@ -8,6 +10,10 @@ const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(morgan("dev"));
+
+// 모든 도메인 허용
+app.use(cors());
 
 // 인증 관련 라우트
 app.use("/auth", authRouter);
