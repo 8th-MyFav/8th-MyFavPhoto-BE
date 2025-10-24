@@ -45,7 +45,7 @@ export async function login(req, res, next) {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       sameSite: "none",
-      // secure: true, // 테스트 환경에서는 사용 불가
+      secure: true, // 테스트 환경에서는 사용 불가
     });
     // 나머지는 body 전송
     res.status(200).json({ ...user, accessToken });
@@ -71,7 +71,7 @@ export async function refreshToken(req, res, next) {
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       sameSite: "none",
-      // secure: true,
+      secure: true,
       path: "/token/refresh",
     });
 
@@ -92,7 +92,7 @@ export async function logout(req, res, next) {
     res.clearCookie("refreshToken", {
       httpOnly: true,
       sameSite: "none",
-      // secure: true,
+      secure: true,
     });
     // res
     return res.json({ message: "로그아웃 완료" });

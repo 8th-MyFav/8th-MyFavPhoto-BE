@@ -9,8 +9,8 @@ import authMiddleware from "../middlewares/authMiddleware.js";
 
 const authRouter = express.Router();
 
-authRouter.post("/singUp", signUp);
-authRouter.post("/singIn", login);
+authRouter.post("/signup", signUp);
+authRouter.post("/signin", login);
 authRouter.post(
   "/refresh-token",
   authMiddleware.verifyRefreshToken,
