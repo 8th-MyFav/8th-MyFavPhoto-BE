@@ -74,6 +74,7 @@ async function loginUser(email, password) {
     // 비밀번호 확인
     await verifyPassword(password, userData.password);
     return filterSensitiveUserData(userData);
+    
   } catch (error) {
     if (error.code === 401) throw error;
 
