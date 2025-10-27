@@ -6,6 +6,7 @@ import prisma from "./config/prisma.js";
 import authRouter from "./routes/authRoute.js";
 import userRouter from "./routes/userRoute.js";
 import errorHandler from "./middlewares/errorHandler.js";
+import cardRouter from "./routes/cardRoute.js";
 
 const app = express();
 
@@ -19,6 +20,9 @@ app.use(cors());
 // 라우트
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+
+// 카드 생성 라우트
+app.use("/cards", cardRouter);
 
 // 서버 healty
 app.get("/", (req, res) => {
