@@ -7,6 +7,7 @@ import authRouter from "./routes/authRoute.js";
 import userRouter from "./routes/userRoute.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import cardRouter from "./routes/cardRoute.js";
+import notificationRouter from "./routes/notificationRoute.js";
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(cors());
 // 라우트
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+app.use("/notifications", notificationRouter);
 
 // 카드 생성 라우트
 app.use("/cards", cardRouter);
