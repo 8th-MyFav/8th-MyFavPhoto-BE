@@ -54,8 +54,14 @@ async function getPointInfo(id) {
 // NOTE: 랜덤 point 획득
 async function gainRandomPoints(id, gainPoint) {
   try {
+    // 유효한 값이 아닌 경우
+    if(!Number.isInteger(gainPoint)) {
+      const error = new Error("유효한 값을 입력해주세요.");
+      error.code = 400;
+      throw error;
+    }
+    
     const points = await getPointInfo(id);
-
     const lastUpdateAt = points.lastRandomPointAt;
 
     // 1시간이 안 지난 경우
@@ -73,10 +79,9 @@ async function gainRandomPoints(id, gainPoint) {
       lastRandomPointAt,
     });
 
-    console.log(updatedPoints);
     return updatedPoints;
   } catch (error) {
-    if (error.code === 429) {
+    if (error.code === 429 || error.code === 400) {
       throw error;
     }
 
