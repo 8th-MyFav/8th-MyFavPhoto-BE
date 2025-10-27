@@ -23,3 +23,16 @@ export async function getPoints(req, res, next) {
     next(error);
   }
 }
+
+// NOTE: 랜덤 Point 추가
+export async function randomPoints(req, res, next) {
+  try {
+    const { userId } = req.auth;
+    const { point } = req.body;
+
+    const points = await userService.gainRandomPoints(userId, point);
+    return res.status(200).json(points);
+  } catch (error) {
+    next(error);
+  }
+}
