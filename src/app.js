@@ -2,9 +2,10 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-import authRouter from "./routes/authRoute.js";
-import errorHandler from "./middlewares/errorHandler.js";
 import prisma from "./config/prisma.js";
+import authRouter from "./routes/authRoute.js";
+import userRouter from "./routes/userRoute.js";
+import errorHandler from "./middlewares/errorHandler.js";
 import cardRouter from "./routes/cardRoute.js";
 
 const app = express();
@@ -16,8 +17,9 @@ app.use(morgan("dev"));
 // 모든 도메인 허용
 app.use(cors());
 
-// 인증 관련 라우트
+// 라우트
 app.use("/auth", authRouter);
+app.use("/users", userRouter);
 
 // 카드 생성 라우트
 app.use("/cards", cardRouter);
@@ -31,7 +33,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// 디비 healty
+// DB healty
 app.get("/health", async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1;`; // DB 연결 테스트
