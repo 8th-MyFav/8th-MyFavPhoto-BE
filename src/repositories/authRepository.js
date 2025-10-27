@@ -16,7 +16,7 @@ async function findByEmail(email) {
   });
 }
 
-async function save(user) {
+async function create(user) {
   return prisma.user.create({
     data: {
       email: user.email,
@@ -56,7 +56,7 @@ async function createOrUpdate(provider, providerId, email, name) {
 export default {
   findById,
   findByEmail,
-  save,
+  create,
   update,
   logout,
   createOrUpdate,

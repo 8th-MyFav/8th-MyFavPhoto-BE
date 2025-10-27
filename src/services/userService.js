@@ -34,16 +34,12 @@ async function getPointInfo(id) {
       throw error;
     }
 
-    console.log("user=> ",user);
-
     const points  = await pointRepository.findById(id);
     if (!points.acc_point) {
      points.acc_point = 0;
     }
 
-    console.log("point=> ", points.acc_point);
-
-    return points.acc_point;
+    return points;
   } catch (error) {
     if (error.code === 401) {
       throw error;
