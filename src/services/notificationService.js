@@ -34,12 +34,6 @@ async function readNotificationItem(id) {
   try {
     const notification = await notificationRepository.findById(id);
 
-    if (!notification) {
-      const error = new Error("알림이 없습니다.");
-      error.code = 404;
-      throw error;
-    }
-
     if (notification.is_read) {
       const error = new Error("이미 읽은 알림입니다.");
       error.code = 409;
