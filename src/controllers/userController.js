@@ -29,6 +29,12 @@ export async function randomPoints(req, res, next) {
   try {
     const { userId } = req.auth;
     const { point } = req.body;
+    
+    if (!point) {
+      const error = new Error("유효한 point가 없습니다.");
+      error.code = 400;
+      throw error;
+    }
 
     const points = await userService.gainRandomPoints(userId, point);
     return res.status(200).json(points);
