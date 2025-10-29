@@ -43,7 +43,7 @@ model Photocards {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  creater        User             @relation(fields: [creator_id], references: [id])
+  creator        User             @relation(fields: [creator_id], references: [id])
   userPhotocards UserPhotocards[]
 }
 
