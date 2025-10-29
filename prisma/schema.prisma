@@ -43,7 +43,7 @@ model Photocards {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  creater        User             @relation(fields: [creator_id], references: [id])
+  creator        User             @relation(fields: [creator_id], references: [id])
   userPhotocards UserPhotocards[]
 }
 
@@ -78,6 +78,7 @@ model UserPhotocards {
   PurchaseHistories PurchaseHistories[]
   OfferedHistories  TradeHistories[]    @relation("OfferedTrades")
   TargetHistories   TradeHistories[]    @relation("TargetTrades")
+  Notifications     Notifications[]
 }
 
 model TradePosts {
@@ -126,14 +127,16 @@ model PurchaseHistories {
 }
 
 model Notifications {
-  id          Int                @id @default(autoincrement())
-  receiver_id Int //FK user테이블
-  category    NotificationStatus @default(PURCHASED)
-  is_read     Boolean
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id           Int                @id @default(autoincrement())
+  receiver_id  Int //FK user테이블
+  photocard_id Int? // FK usercards 테이블 
+  category     NotificationStatus @default(PURCHASED)
+  is_read      Boolean            @default(false)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
-  receiver User @relation(fields: [receiver_id], references: [id])
+  receiver  User            @relation(fields: [receiver_id], references: [id])
+  photocard UserPhotocards? @relation(fields: [photocard_id], references: [id])
 }
 
 enum NotificationStatus {
