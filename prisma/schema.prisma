@@ -146,10 +146,11 @@ enum NotificationStatus {
 }
 
 model Points {
-  id        Int      @id //userid임
-  acc_point Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                Int       @id //userid임
+  acc_point         Int?
+  lastRandomPointAt DateTime? // 마지막 랜덤 포인트 받은 시각
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   user User @relation(fields: [id], references: [id])
 }

@@ -1,5 +1,9 @@
 import express from "express";
-import { getMe, getPoints } from "../controllers/userController.js";
+import {
+  getMe,
+  getPoints,
+  randomPoints,
+} from "../controllers/userController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 
 const userRouter = express.Router();
@@ -9,6 +13,6 @@ userRouter.use(authMiddleware.verifyAccessToken);
 
 userRouter.get("/me", getMe);
 userRouter.get("/points", getPoints);
-// user 만들때 points 테이블도 자동으로 생성 추가
+userRouter.post("/points", randomPoints);
 
 export default userRouter;

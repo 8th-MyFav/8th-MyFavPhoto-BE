@@ -2,6 +2,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import authRepository from "../repositories/authRepository.js";
+import pointRepository from "../repositories/pointRepository.js";
 
 // 비밀키는 .env로 분리해야 함
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
@@ -32,17 +33,18 @@ async function createUser(user) {
     // 비밀번호 해싱
     const hashedPassword = await hashPassword(user.password);
     // user 정보 db 저장 후 반환
-    const createdUser = await authRepository.save({
+    const createdUser = await authRepository.create({
       ...user,
       password: hashedPassword,
     });
+    const createdPoints = await pointRepository.create(createdUser.id);
 
     return filterSensitiveUserData(createdUser);
   } catch (error) {
     if (error.code === 409) {
       throw error;
     }
-    // 백엔드 서버 에러
+    
     const customError = new Error("데이터베이스 작업 중 오류가 발생했습니다");
     customError.code = 500;
     throw customError;
@@ -74,7 +76,6 @@ async function loginUser(email, password) {
     // 비밀번호 확인
     await verifyPassword(password, userData.password);
     return filterSensitiveUserData(userData);
-    
   } catch (error) {
     if (error.code === 401) throw error;
 
