@@ -1,3 +1,4 @@
+import { Grade } from "@prisma/client";
 import prisma from "../config/prisma.js";
 
 /**
@@ -92,12 +93,76 @@ async function findById(cardId) {}
 async function update(cardId, updateData) {}
 
 /**
- * 내 카드 목록 조회
- * @param {number} a 첫 번째 숫자
- * @param {number} b 두 번째 숫자
- * @returns {number} 두 숫자의 합
+ * 특정 유저의 포토카드 목록을 조회합니다.
+ *
+ * - 전체 카드 기준으로 등급별 개수(`gradeCounts`)와 총 개수(`totalCount`)를 계산하고,
+ * - 필터가 적용된 카드 리스트(`lists`)를 페이지네이션하여 반환합니다.
+ *
+ * @param {Object} params                  - 조회 조건
+ * @param {number} params.userId           - 유저 ID
+ * @param {number} params.page             - 페이지 번호 (1부터 시작)
+ * @param {number} params.pageSize         - 페이지당 항목 수
+ * @param {string} [params.grade]          - 필터용 등급 (COMMON, RARE, SUPER_RARE, LEGENDARY)
+ * @param {string} [params.genre]          - 필터용 장르 (KPOP, ACTOR, ESPORTS, KBO, ANIMATION)
+ * @param {string} [params.keyword]        - 카드 이름 검색 키워드 (대소문자 무시)
+ * @returns {Promise<{ totalCount: number, gradeCounts: Object, lists: Object[] }>}
+ *          카드 총 개수, 등급별 개수 요약, 필터된 카드 목록을 포함한 객체
  */
-async function findByUserId(userId) {}
+async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
+  const baseWhere = { creator_id: userId };
+  const filteredWhere = {
+    ...baseWhere,
+    ...(grade && { grade }),
+    ...(genre && { genre }),
+    ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
+  };
+
+  const totalCount = await prisma.Photocards.count({ where: baseWhere });
+
+  const groupGrades = await prisma.Photocards.groupBy({
+    by: ["grade"],
+    where: baseWhere,
+    _count: { grade: true },
+  });
+
+  const gradeCounts = Object.fromEntries(
+    Object.values(Grade).map((grade) => [grade, 0])
+  );
+
+  console.log("groupGrades: ", groupGrades); // [ { _count: { grade: 1 }, grade: 'RARE' } ]
+  console.log("gradeCounts: ", gradeCounts); // { COMMON: 0, RARE: 0, SUPER_RARE: 0, LEGENDARY: 0 }
+
+  groupGrades.forEach(
+    ({ grade, _count }) => (gradeCounts[grade] = _count.grade)
+  );
+
+  console.log("forEach group grades: ", groupGrades); // [ { _count: { grade: 1 }, grade: 'RARE' } ]
+  console.log("forEach grade counts: ", gradeCounts);
+
+  const lists = await prisma.Photocards.findMany({
+    where: filteredWhere,
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      creator_id: true,
+      name: true,
+      grade: true,
+      genre: true,
+      price: true,
+      total_count: true,
+      image_url: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+  return {
+    totalCount,
+    gradeCounts,
+    lists,
+  };
+}
 
 export default {
   create,

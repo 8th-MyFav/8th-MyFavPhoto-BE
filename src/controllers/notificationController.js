@@ -1,5 +1,6 @@
 import notificationService from "../services/notificationService.js";
 
+// NOTE: 알림 조회
 export async function getNotification(req, res, next) {
   try {
     const { userId } = req.auth;
@@ -8,7 +9,7 @@ export async function getNotification(req, res, next) {
     const pageNum = Number(page);
     const pageSizeNum = Number(pageSize);
 
-    // 유효성 검사
+    // 쿼리 유효성 검사
     if (
       !Number.isInteger(pageNum) ||
       pageNum < 1 ||
@@ -27,6 +28,24 @@ export async function getNotification(req, res, next) {
     );
 
     return res.status(200).json(notifications);
+  } catch (error) {
+    next(error);
+  }
+}
+
+// NOTE: 알림 읽음
+export async function readNotification(req, res, next) {
+  try {
+    const { userId } = req.auth;
+    const { id } = req.params;
+
+    const readNotif = await notificationService.readNotificationItem(
+      Number(id)
+    );
+
+    return res
+      .status(200)
+      .json({ id: readNotif.id, is_read: readNotif.is_read });
   } catch (error) {
     next(error);
   }

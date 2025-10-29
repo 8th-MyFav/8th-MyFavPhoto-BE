@@ -1,6 +1,9 @@
 import express from "express";
 import authMiddleware from "../middlewares/authMiddleware.js";
-import { getNotification } from "../controllers/notificationController.js";
+import {
+  getNotification,
+  readNotification,
+} from "../controllers/notificationController.js";
 
 const notificationRouter = express.Router();
 
@@ -8,5 +11,10 @@ const notificationRouter = express.Router();
 notificationRouter.use(authMiddleware.verifyAccessToken);
 
 notificationRouter.get("/", getNotification);
+notificationRouter.patch(
+  "/:id/read",
+  authMiddleware.verifyNotifAuth,
+  readNotification
+);
 
 export default notificationRouter;

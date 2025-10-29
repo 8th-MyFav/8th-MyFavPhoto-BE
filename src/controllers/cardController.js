@@ -33,12 +33,50 @@ export async function createCard(req, res, next) {
   try {
     const { userId } = req.auth;
     const cardData = req.body;
-    //NOTE: 일반적으로 user 객체 구조는 팀마다 diff => req.user.id가 맞는지(or req.user.userId인지) 확인 필요
     if (!cardData || Object.keys(cardData).length === 0) {
       return res.status(400).json({ message: "body가 비어있습니다." });
     }
     const card = await cardService.createCard(userId, cardData);
     return res.status(201).json(card);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getMyCards(req, res, next) {
+  try {
+    const { userId } = req.auth;
+    const { page = 1, pageSize = 15, grade, genre, keyword } = req.query;
+    const pageNum = +page;
+    const pageSizeNum = +pageSize;
+
+    if (isNaN(pageNum) || pageNum < 1) {
+      return res
+        .status(400)
+        .json({ message: "페이지 값은 1 이상의 정수여야 합니다." });
+    }
+    if (isNaN(pageSizeNum) || pageSizeNum < 0 || pageSizeNum > 50) {
+      // NOTE: 필요시 100으로 변경
+      return res
+        .status(400)
+        .json({ message: "페이지 크기는 1에서 50 사이여야 합니다." });
+    }
+    if (keyword && keyword.length > 50) {
+      return res
+        .status(400)
+        .json({ message: "검색어는 최대 50자까지 입력할 수 있습니다." });
+    }
+
+    const myCards = await cardService.getMyCards({
+      userId,
+      page: pageNum,
+      pageSize: pageSizeNum,
+      grade,
+      genre,
+      keyword,
+    });
+
+    return res.status(200).json(myCards);
   } catch (error) {
     next(error);
   }
