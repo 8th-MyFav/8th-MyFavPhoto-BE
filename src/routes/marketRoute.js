@@ -6,9 +6,15 @@ const marketRouter = express.Router();
 
 // NOTE: 교환 api
 marketRouter.post(
-  "/:cardId/trades",
+  "/trades/:cardId",
   authMiddleware.verifyAccessToken,
   proposeTrade
+);
+
+marketRouter.get(
+  "/trades/:cardId",
+  authMiddleware.verifyAccessToken,
+  
 );
 
 export default marketRouter;
