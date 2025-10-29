@@ -77,14 +77,6 @@ async function create(userId, cardData) {
 }
 
 /**
- * 카드 단건 조회
- * @param {number} a 첫 번째 숫자
- * @param {number} b 두 번째 숫자
- * @returns {number} 두 숫자의 합
- */
-async function findById(cardId) {}
-
-/**
  * 카드 정보 수정
  * @param {number} a 첫 번째 숫자
  * @param {number} b 두 번째 숫자
@@ -164,9 +156,24 @@ async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
   };
 }
 
+/**
+ * 특정 카드 조회
+ * @param {Object} params
+ * @param {number} params.cardId
+ * @returns {Promise<Object|null>}
+ */
+
+async function findByCardId({ userId, cardId }) {
+  const cardDetail = await prisma.Photocards.findUnique({
+    where: { id: cardId },
+  });
+  console.log("cardDetail: ", cardDetail);
+  return cardDetail;
+}
+
 export default {
   create,
-  findById,
   update,
   findByUserId,
+  findByCardId,
 };

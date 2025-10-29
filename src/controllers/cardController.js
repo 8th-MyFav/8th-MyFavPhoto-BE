@@ -1,4 +1,3 @@
-import express from "express";
 import cardService from "../services/cardService.js";
 
 /**
@@ -77,6 +76,25 @@ export async function getMyCards(req, res, next) {
     });
 
     return res.status(200).json(myCards);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getMyCardDetail(req, res, next) {
+  // getMyCardById
+  try {
+    const { userId } = req.auth;
+    const cardId = +req.params.cardId;
+
+    if (isNaN(cardId)) {
+      return res
+        .status(400)
+        .json({ message: "카드 아이디를 숫자로 변경해주세요." });
+    }
+
+    const myCardDetail = await cardService.getMyCardDetail({ userId, cardId });
+    return res.status(200).json(myCardDetail);
   } catch (error) {
     next(error);
   }
