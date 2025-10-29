@@ -1,5 +1,8 @@
 import express from "express";
-import { proposeTrade } from "../controllers/tradeController.js";
+import {
+  getOfferedTradesHistory,
+  proposeTrade,
+} from "../controllers/tradeController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 
 const marketRouter = express.Router();
@@ -14,7 +17,7 @@ marketRouter.post(
 marketRouter.get(
   "/trades/:cardId",
   authMiddleware.verifyAccessToken,
-  
+  getOfferedTradesHistory
 );
 
 export default marketRouter;

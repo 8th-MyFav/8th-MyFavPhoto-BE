@@ -2,7 +2,11 @@ import prisma from "../config/prisma.js";
 
 // NOTE: 교환 목록 조회
 async function findByCardId(id) {
-
+  return prisma.tradeHistories.findMany({
+    where: {
+      target_card_id: id,
+    },
+  });
 }
 
 // NOTE: 교환 제안 생성
@@ -60,5 +64,6 @@ async function create(
 }
 
 export default {
+  findByCardId,
   create,
 };

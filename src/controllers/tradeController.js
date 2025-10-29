@@ -16,7 +16,7 @@ export async function proposeTrade(req, res, next) {
       content
     );
 
-    return res.status(200).json(trades);
+    return res.status(201).json(trades);
   } catch (error) {
     next(error);
   }
@@ -30,7 +30,9 @@ export async function getOfferedTradesHistory(req, res, next) {
 
     // query 유효성 검사
 
-    
+    const trades = await tradeService.getTradesHistory(cardId);
+
+    return res.status(200).json(trades);
   } catch (error) {
     next(error);
   }
