@@ -1,4 +1,6 @@
+import { Genre, Grade } from "@prisma/client";
 import cardRepository from "../repositories/cardRepository.js";
+import * as errors from "../utils/errors.js"; // NOTE: 일단 errors.메서드()로 사용. 필요시 변경
 
 /**
  * 카드 생성 Service
@@ -21,7 +23,7 @@ import cardRepository from "../repositories/cardRepository.js";
  */
 async function createCard(userId, cardData) {
   if (!userId) {
-    const error = new Error("UNAUTHORIZED"); 
+    const error = new Error("UNAUTHORIZED");
     error.code = 401;
     error.data = {
       errorCode: "UNAUTHORIZED",
@@ -50,4 +52,29 @@ async function createCard(userId, cardData) {
   return createdCard;
 }
 
-export default { createCard };
+async function getMyCards({ userId, page, pageSize, grade, genre, keyword }) {
+  if (!userId) throw errors.unauthorized();
+
+  // grade가 DB에 허용된 값인지
+  if (grade && !Object.values(Grade).includes(grade))
+    throw errors.invalidQuery();
+
+  // genre가 존재하는 카테고리인지???
+  if (genre && !Object.values(Genre).includes(genre))
+    throw errors.invalidQuery();
+
+  const myCards = await cardRepository.findByUserId({
+    userId,
+    page,
+    pageSize,
+    grade,
+    genre,
+    keyword,
+  });
+  return myCards;
+}
+
+export default {
+  createCard,
+  getMyCards,
+};
