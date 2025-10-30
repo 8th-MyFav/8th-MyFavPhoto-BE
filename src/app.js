@@ -8,6 +8,7 @@ import userRouter from "./routes/userRoute.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import cardRouter from "./routes/cardRoute.js";
 import notificationRouter from "./routes/notificationRoute.js";
+import marketRouter from "./routes/marketRoute.js";
 
 const app = express();
 
@@ -25,6 +26,9 @@ app.use("/notifications", notificationRouter);
 
 // 카드 생성 라우트
 app.use("/cards", cardRouter);
+
+// marketplace 라우트
+app.use("/market", marketRouter);
 
 // 서버 healty
 app.get("/", (req, res) => {
