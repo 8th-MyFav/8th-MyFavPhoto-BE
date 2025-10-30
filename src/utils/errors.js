@@ -11,7 +11,7 @@
 function createError(code, errorCode, message) {
   const error = new Error(message);
   error.code = code;
-  error.data = { errorCode, message };
+  error.data = { errorCode };
   return error;
 }
 
