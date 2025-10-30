@@ -12,7 +12,7 @@ function createError(code, errorCode, message) {
   const error = new Error(message);
   error.code = code;
   error.data = { errorCode, message };
-  return erroerrorr;
+  return error;
 }
 
 /* ===========================
@@ -55,7 +55,7 @@ export function unauthorized(message = "로그인이 필요합니다.") {
 =========================== */
 
 // 접근 권한 없음
-export function forbidden(message = "권한이 없는 사용자입니다.") {
+export function forbidden(message = "접근 권한이 없습니다.") {
   return createError(403, "FORBIDDEN", message);
 }
 
