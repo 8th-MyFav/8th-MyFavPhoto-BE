@@ -47,7 +47,7 @@ export function validationError(message = "입력 값이 올바르지 않습니�
 
 // 인증이 필요한 요청
 export function unauthorized(message = "로그인이 필요합니다.") {
-  return createError(401, "UNAUTHORIZED", message); 
+  return createError(401, "UNAUTHORIZED", message);
 }
 
 /* ===========================
@@ -117,6 +117,11 @@ export function cardAlreadyInTrade(
 // 잘못된 거래 상태 (이미 승인/거절된 거래)
 export function invalidTradeStatus(message = "이미 처리된 거래입니다.") {
   return createError(409, "INVALID_TRADE_STATUS", message);
+}
+
+// 이미 읽은 알람
+export function alreadyReadNotification(message = "이미 읽은 알림입니다.") {
+  return createError(409, "ALREADY_READ_NOTIFICATION", message);
 }
 
 /* ===========================

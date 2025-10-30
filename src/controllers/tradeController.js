@@ -1,4 +1,5 @@
 import tradeService from "../services/tradeService.js";
+import * as errors from "../utils/errors.js";
 
 // NOTE: 교환 제안
 export async function proposeTrade(req, res, next) {

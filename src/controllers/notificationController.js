@@ -1,4 +1,5 @@
 import notificationService from "../services/notificationService.js";
+import * as errors from "../utils/errors.js";
 
 // NOTE: 알림 조회
 export async function getNotification(req, res, next) {
@@ -16,9 +17,7 @@ export async function getNotification(req, res, next) {
       !Number.isInteger(pageSizeNum) ||
       pageSizeNum < 1
     ) {
-      const error = new Error("잘못된 쿼리 파라미터입니다.");
-      error.code = 400;
-      throw error;
+      throw errors.invalidQuery();
     }
 
     const notifications = await notificationService.getNotificationList(
