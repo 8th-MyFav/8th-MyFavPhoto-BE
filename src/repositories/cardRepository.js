@@ -42,6 +42,7 @@ async function create(userId, cardData) {
     const photocard = await tx.Photocards.create({
       data: {
         creator_id: userId,
+        // NOTE: user_id vs userId는 middleware, controller, service 참고해서 변경할 것
         name: cardData.name,
         grade: cardData.grade,
         genre: cardData.genre,
