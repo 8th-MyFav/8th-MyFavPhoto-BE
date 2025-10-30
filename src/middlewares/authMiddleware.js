@@ -1,5 +1,8 @@
 import { expressjwt } from "express-jwt";
 import notificationRepository from "../repositories/notificationRepository.js";
+import cardRepository from "../repositories/cardRepository.js";
+import * as errors from "../utils/errors.js";
+import userCardRepository from "../repositories/userCardRepository.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
@@ -15,6 +18,41 @@ const verifyRefreshToken = expressjwt({
   algorithms: ["HS256"],
   getToken: (req) => req.cookies.refreshToken,
 });
+
+// params로 들어온 카드가 현재 유저 카드인지 확인 -> 판매 올리기, 판매 내리기 등
+async function verifyCardAuth(req, res, next) {
+  const { userId } = req.auth;
+  const { cardId } = req.params;
+  try {
+    // 일단 카드 id로 photocards id 구하기 -> photocards id로 creator id 구하기
+    const userCard = await userCardRepository.findById(Number(cardId));
+    const cardInfo = await cardRepository.findByCardId(userCard.photocards_id);
+
+    // 카드 creator랑 현재 auth 가 동일한지 확인
+    if (cardInfo.creator_id !== userId) throw errors.forbidden("해당 카드의 생성자가 아닙니다.");
+
+    next();
+  } catch (error) {
+    return next(error);
+  }
+}
+// body로 들어온 offered Card가 현재 유저 카드인지 확인 -> trade 제안에만 사용?
+async function verifyOfferedCardAuth(req, res, next) {
+  const { userId } = req.auth;
+  const { offeredCardId: cardId } = req.body;
+  try {
+    // 일단 카드 id로 카드 정보에서 creator id 가져오기
+    const userCard = await userCardRepository.findById(Number(cardId));
+    const cardInfo = await cardRepository.findByCardId(userCard.photocards_id);
+
+    // 카드 creator랑 현재 auth 가 동일한지 확인
+    if (cardInfo.creator_id !== userId) throw errors.forbidden("제안한 카드의 생성자가 아닙니다.");
+
+    next();
+  } catch (error) {
+    return next(error);
+  }
+}
 
 // 알림 유저 확인
 async function verifyNotifAuth(req, res, next) {
@@ -44,5 +82,7 @@ async function verifyNotifAuth(req, res, next) {
 export default {
   verifyAccessToken,
   verifyRefreshToken,
+  verifyCardAuth,
+  verifyOfferedCardAuth,
   verifyNotifAuth,
 };

@@ -47,7 +47,7 @@ export function validationError(message = "입력 값이 올바르지 않습니�
 
 // 인증이 필요한 요청
 export function unauthorized(message = "로그인이 필요합니다.") {
-  return createError(401, "UNAUTHORIZED", message);
+  return createError(401, "UNAUTHORIZED", message); 
 }
 
 /* ===========================
