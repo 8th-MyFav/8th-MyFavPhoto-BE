@@ -1,8 +1,12 @@
 import tradeRepository from "../repositories/tradeRepository.js";
 import * as errors from "../utils/errors.js";
+import validate from "../utils/validate.js";
 
 async function createTrade(userId, targetCardId, offeredCardId, content) {
   try {
+    // target 카드 존재 확인
+    await validate.isEntityExist(targetCardId, "userPhotocards");
+
     // tradehistory 생성 + 교환 제안 알림 생성
     const tradeHistory = await tradeRepository.create(
       userId,
@@ -13,14 +17,15 @@ async function createTrade(userId, targetCardId, offeredCardId, content) {
 
     return tradeHistory;
   } catch (error) {
-    if (error.code === 401) {
+    if ([401, 404, 409].includes(error.code)) {
       throw error;
     }
+
     throw errors.internalServerError();
   }
 }
 
-async function getTradesHistory(userId, cardId) {
+async function getTradesHistory(cardId) {
   try {
     // 카드 존재 확인
     const tradeHistories = await tradeRepository.findByCardId(cardId);

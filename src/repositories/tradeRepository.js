@@ -19,17 +19,6 @@ async function create(
 ) {
   // 교환 제안 생성
   const result = await prisma.$transaction(async (tx) => {
-    // validate.isEntityExist(offered_card_id, "userPhotocards");
-
-    const offeredCard = await tx.userPhotocards.findUnique({
-      where: { id: offered_card_id },
-      select: { id: true },
-    });
-    // 제안할려는 카드 유무 확인
-    if (!offeredCard) {
-      throw new Error("제안하려는 카드가 존재하지 않습니다.");
-    }
-
     const tradeHistory = await tx.tradeHistories.create({
       data: {
         requester_id,

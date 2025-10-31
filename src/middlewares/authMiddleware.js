@@ -24,8 +24,11 @@ async function verifyCardAuth(req, res, next) {
   const { userId } = req.auth;
   const { cardId } = req.params;
   try {
-    // 일단 카드 id로 photocards id 구하기 -> photocards id로 creator id 구하기
+    // 일단 카드 id로 photocards id 구하기
     const userCard = await userCardRepository.findById(Number(cardId));
+    
+    if(!userCard) throw errors.cardNotFound();
+    // -> photocards id로 creator id 구하기
     const cardInfo = await cardRepository.findByCardId(userCard.photocards_id);
 
     // 카드 creator랑 현재 auth 가 동일한지 확인
@@ -43,6 +46,8 @@ async function verifyOfferedCardAuth(req, res, next) {
   try {
     // 일단 카드 id로 카드 정보에서 creator id 가져오기
     const userCard = await userCardRepository.findById(Number(cardId));
+    if(!userCard) throw errors.cardNotFound();
+    
     const cardInfo = await cardRepository.findByCardId(userCard.photocards_id);
 
     // 카드 creator랑 현재 auth 가 동일한지 확인
