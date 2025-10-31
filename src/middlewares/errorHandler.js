@@ -11,8 +11,9 @@ export default function errorHandler(error, req, res, next) {
     path: req.path,
     method: req.method,
     code: error.code,
+    errorCode: error.data.errorCode,
     message: error.message ?? "Internal Server Error",
-    data: error.data ?? undefined,
+    // data: error.data ?? undefined,
     date: new Date(),
   });
 }

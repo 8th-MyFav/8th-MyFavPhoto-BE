@@ -46,6 +46,7 @@ export async function getOfferedTradesHistory(req, res, next) {
 // NOTE: 교환 제시 승인
 export async function approveTrade(req, res, next) {
   try {
+    const {userId} = req.auth;
   } catch (error) {
     next(error);
   }
@@ -54,6 +55,9 @@ export async function approveTrade(req, res, next) {
 // NOTE: 교한 제시 거절
 export async function rejectTrade(req, res, next) {
   try {
+    const {userId} = req.auth;
+
+    
   } catch (error) {
     next(error);
   }
