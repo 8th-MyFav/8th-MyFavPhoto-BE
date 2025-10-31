@@ -79,7 +79,7 @@ async function getMyCardDetail({ userId, cardId }) {
 
   if (!cardId) throw errors.invalidData("card id가 전달되지 않았습니다.");
 
-  const myCardDetail = await cardRepository.findByCardId({ userId, cardId });
+  const myCardDetail = await cardRepository.findByCardId(cardId);
   if (!myCardDetail) throw errors.cardNotFound();
   if (myCardDetail.creator_id !== userId) throw errors.forbidden();
   return myCardDetail;

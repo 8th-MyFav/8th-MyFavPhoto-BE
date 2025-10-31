@@ -119,6 +119,11 @@ export function invalidTradeStatus(message = "이미 처리된 거래입니다."
   return createError(409, "INVALID_TRADE_STATUS", message);
 }
 
+// 이미 읽은 알람
+export function alreadyReadNotification(message = "이미 읽은 알림입니다.") {
+  return createError(409, "ALREADY_READ_NOTIFICATION", message);
+}
+
 /* ===========================
    🚦 413 / 429 / 5xx 계열
 =========================== */

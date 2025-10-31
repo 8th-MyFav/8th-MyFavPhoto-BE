@@ -1,14 +1,13 @@
 import authRepository from "../repositories/authRepository.js";
 import pointRepository from "../repositories/pointRepository.js";
+import * as errors from "../utils/errors.js";
 
 // NOTE: 유저 정보 가져오기
 async function getMeInfo(id) {
   try {
     const user = await authRepository.findById(id);
     if (!user) {
-      const error = new Error("로그인이 필요합니다.");
-      error.code = 401;
-      throw error;
+      throw errors.unauthorized();
     }
 
     const { password, refreshToken, ...filteredUser } = user;
@@ -17,22 +16,17 @@ async function getMeInfo(id) {
     if (error.code === 401) {
       throw error;
     }
-
-    const customError = new Error("데이터베이스 작업 중 오류가 발생했습니다");
-    customError.code = 500;
-    throw customError;
+    throw errors.internalServerError();
   }
 }
 
 // NOTE: point 가져오기
 async function getPointInfo(id) {
   try {
-    const user = await authRepository.findById(id);
-    if (!user) {
-      const error = new Error("로그인이 필요합니다.");
-      error.code = 401;
-      throw error;
-    }
+    // const user = await authRepository.findById(id);
+    // if (!user) {
+    //  throw errors.unauthorized();
+    // }
 
     const points = await pointRepository.findById(id);
     if (!points.acc_point) {
@@ -44,10 +38,7 @@ async function getPointInfo(id) {
     if (error.code === 401) {
       throw error;
     }
-
-    const customError = new Error("데이터베이스 작업 중 오류가 발생했습니다");
-    customError.code = 500;
-    throw customError;
+    throw errors.internalServerError();
   }
 }
 
@@ -55,20 +46,16 @@ async function getPointInfo(id) {
 async function gainRandomPoints(id, gainPoint) {
   try {
     // 유효한 값이 아닌 경우
-    if(!Number.isInteger(gainPoint)) {
-      const error = new Error("유효한 값을 입력해주세요.");
-      error.code = 400;
-      throw error;
+    if (!Number.isInteger(gainPoint)) {
+      throw errors.validationError();
     }
-    
+
     const points = await getPointInfo(id);
     const lastUpdateAt = points.lastRandomPointAt;
 
     // 1시간이 안 지난 경우
     if (!isOver60Minutes(lastUpdateAt)) {
-      const error = new Error("1시간에 1회만 포인트 획득 가능합니다.");
-      error.code = 429;
-      throw error;
+      throw errors.tooManyRequests("1시간에 1회만 포인트 획득 가능합니다.");
     }
 
     const lastRandomPointAt = new Date();
@@ -84,10 +71,7 @@ async function gainRandomPoints(id, gainPoint) {
     if (error.code === 429 || error.code === 400) {
       throw error;
     }
-
-    const customError = new Error("데이터베이스 작업 중 오류가 발생했습니다");
-    customError.code = 500;
-    throw customError;
+    throw errors.internalServerError();
   }
 }
 // 랜덤 획득 후 1시간 확인

@@ -1,4 +1,5 @@
 import authService from "../services/authService.js";
+import * as errors from "../utils/errors.js";
 
 // NOTE: 회원가입
 export async function signUp(req, res, next) {
@@ -6,9 +7,7 @@ export async function signUp(req, res, next) {
     const { email, password, nickname } = req.body;
     // body로 data 들어왔는지 확인
     if (!email || !password || !nickname) {
-      const error = new Error("유효한 값을 모두 작성해주세요.");
-      error.code = 400;
-      throw error;
+      throw errors.invalidData();
     }
     // createUser 호출
     const user = await authService.createUser({ email, password, nickname });
@@ -26,9 +25,7 @@ export async function login(req, res, next) {
     const { email, password } = req.body;
     // body로 data 들어왔는지 확인
     if (!email || !password) {
-      const error = new Error("유효한 값을 모두 작성해주세요.");
-      error.code = 400;
-      throw error;
+      throw errors.invalidData();
     }
 
     // loginUser 호출

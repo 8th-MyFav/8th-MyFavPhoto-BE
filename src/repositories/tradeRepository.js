@@ -1,4 +1,5 @@
 import prisma from "../config/prisma.js";
+import validate from "../utils/validate.js";
 
 // NOTE: 교환 목록 조회
 async function findByCardId(id) {
@@ -18,6 +19,8 @@ async function create(
 ) {
   // 교환 제안 생성
   const result = await prisma.$transaction(async (tx) => {
+    // validate.isEntityExist(offered_card_id, "userPhotocards");
+
     const offeredCard = await tx.userPhotocards.findUnique({
       where: { id: offered_card_id },
       select: { id: true },

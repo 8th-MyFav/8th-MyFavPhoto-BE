@@ -157,11 +157,11 @@ async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
  * @returns {Promise<Object|null>}
  */
 
-async function findByCardId({ userId, cardId }) {
+async function findByCardId(cardId) {
   const cardDetail = await prisma.Photocards.findUnique({
     where: { id: cardId },
   });
-  console.log("cardDetail: ", cardDetail);
+  // console.log("cardDetail: ", cardDetail);
   return cardDetail;
 }
 

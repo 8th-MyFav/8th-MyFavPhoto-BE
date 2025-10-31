@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import authRepository from "../repositories/authRepository.js";
 import pointRepository from "../repositories/pointRepository.js";
+import * as errors from "../utils/errors.js";
 
 // 비밀키는 .env로 분리해야 함
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
@@ -24,10 +25,7 @@ async function createUser(user) {
     // 이메일 중복 확인
     const existedUser = await authRepository.findByEmail(user.email);
     if (existedUser) {
-      const error = new Error("이미 존재하는 이메일입니다.");
-      error.code = 409;
-      error.data = { email: user.email };
-      throw error;
+      throw errors.emailAlreadyExists();
     }
 
     // 비밀번호 해싱
@@ -44,10 +42,8 @@ async function createUser(user) {
     if (error.code === 409) {
       throw error;
     }
-    
-    const customError = new Error("데이터베이스 작업 중 오류가 발생했습니다");
-    customError.code = 500;
-    throw customError;
+
+    throw errors.internalServerError();
   }
 }
 
@@ -56,9 +52,7 @@ async function verifyPassword(inputPassword, password) {
   const isMatch = await bcrypt.compare(inputPassword, password);
 
   if (!isMatch) {
-    const error = new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
-    error.code = 401;
-    throw error;
+    throw errors.unauthorized("이메일 또는 비밀번호가 올바르지 않습니다.");
   }
 }
 
@@ -68,9 +62,7 @@ async function loginUser(email, password) {
     // email 유무 확인
     const userData = await authRepository.findByEmail(email);
     if (!userData) {
-      const error = new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
-      error.code = 401;
-      throw error;
+      throw errors.unauthorized("이메일 또는 비밀번호가 올바르지 않습니다.");
     }
 
     // 비밀번호 확인
@@ -79,9 +71,7 @@ async function loginUser(email, password) {
   } catch (error) {
     if (error.code === 401) throw error;
 
-    const customError = new Error("데이터베이스 작업 중 오류가 발생했습니다");
-    customError.code = 500;
-    throw customError;
+    throw errors.internalServerError();
   }
 }
 
@@ -108,9 +98,7 @@ async function refreshToken(userId, refreshToken) {
     const user = await authRepository.findById(userId);
     // DB user 정보, refresh token 확인
     if (!user || user.refreshToken !== refreshToken) {
-      const error = new Error("유효하지 않은 refresh token입니다.");
-      error.code = 401;
-      throw error;
+      throw errors.unauthorized("유효하지 않은 refresh token입니다.");  
     }
     // 새로운 accessToken, refreshToekn 발급
     const newAccessToken = await createToken(user);
@@ -120,9 +108,7 @@ async function refreshToken(userId, refreshToken) {
   } catch (error) {
     if (error.code === 401) throw error;
 
-    const customError = new Error("데이터베이스 작업 중 오류가 발생했습니다");
-    customError.code = 500;
-    throw customError;
+    throw errors.internalServerError();
   }
 }
 
@@ -132,18 +118,14 @@ async function logout(userId) {
     const user = await authRepository.findById(userId);
     // DB user 정보, refresh token 확인
     if (!user) {
-      const error = new Error("로그인이 필요합니다.");
-      error.code = 401;
-      throw error;
+      throw errors.unauthorized();
     }
 
     return await authRepository.logout(userId);
   } catch (error) {
     if (error.code === 401) throw error;
 
-    const customError = new Error("데이터베이스 작업 중 오류가 발생했습니다");
-    customError.code = 500;
-    throw customError;
+    throw errors.internalServerError();
   }
 }
 
