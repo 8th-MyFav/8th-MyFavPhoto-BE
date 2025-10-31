@@ -35,16 +35,15 @@ import prisma from "../config/prisma.js";
  *   image_url: "https://example.com/card.jpg"
  * }, 1);
  */
-
 async function create(userId, cardData) {
   // tx: 트랜잭션 내에 사용하는 클라이언트 인스턴스
   const result = await prisma.$transaction(async (tx) => {
-    // NOTE: photocard 테이블에 데이터를 추가함
+    // NOTE: Photocards 테이블에 데이터 추기
     const photocard = await tx.Photocards.create({
       data: {
         creator_id: userId,
         // NOTE: user_id vs userId는 middleware, controller, service 참고해서 변경할 것
-        name: cardData.name, 
+        name: cardData.name,
         grade: cardData.grade,
         genre: cardData.genre,
         price: cardData.price,
@@ -54,24 +53,19 @@ async function create(userId, cardData) {
       },
     });
 
-    // NOTE: userPhotocard 테이블에 만들어진 photocard의 id와 생성자 id 외 데이터를 추가
-    const trade_info_id = undefined;
-
-    const userPhotocardData = {
-      owner_id: userId,
-      photocards_id: photocard.id,
-      // trade_info_id,
-      is_sale: false,
-    };
-
-    if (trade_info_id !== undefined) {
-      userPhotocardData.trade_info_id = trade_info_id;
-    }
-
-    const userPhotocard = await tx.UserPhotocards.create({
-      data: userPhotocardData,
-    });
-    return { photocard, userPhotocard };
+    // NOTE: UserPhotocards 테이블에 데이터 추가
+    const userPhotocards = await Promise.all(
+      Array.from({ length: cardData.total_count }).map(() =>
+        tx.UserPhotocards.create({
+          data: {
+            owner_id: userId,
+            photocards_id: photocard.id,
+            is_sale: false,
+          },
+        })
+      )
+    );
+    return { photocard, userPhotocards };
   });
   return result;
 }

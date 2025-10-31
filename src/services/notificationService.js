@@ -7,7 +7,7 @@ async function getNotificationList(userId, page, pageSize) {
     const notificationList = await notificationRepository.findByUserId(
       userId,
       page,
-      pageSize 
+      pageSize
     );
 
     if (notificationList.length === 0) {

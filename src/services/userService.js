@@ -8,7 +8,7 @@ async function getMeInfo(id) {
     if (!user) {
       const error = new Error("로그인이 필요합니다.");
       error.code = 401;
-      throw error; 
+      throw error;
     }
 
     const { password, refreshToken, ...filteredUser } = user;
