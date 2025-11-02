@@ -23,8 +23,16 @@ marketRouter.get(
   getOfferedTradesHistory
 );
 // NOTE: 교환 제시 승인
-marketRouter.patch("/trades/:tradeId/approve", approveTrade);
+marketRouter.patch(
+  "/trades/:tradeId/approve",
+  authMiddleware.verifyTradeAuth,
+  approveTrade
+);
 // NOTE: 교환 제시 거절
-marketRouter.patch("/trades/:tradeId/reject", rejectTrade);
+marketRouter.patch(
+  "/trades/:tradeId/reject",
+  authMiddleware.verifyTradeAuth,
+  rejectTrade
+);
 
 export default marketRouter;

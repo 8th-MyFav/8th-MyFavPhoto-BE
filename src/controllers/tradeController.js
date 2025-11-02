@@ -46,7 +46,15 @@ export async function getOfferedTradesHistory(req, res, next) {
 // NOTE: 교환 제시 승인
 export async function approveTrade(req, res, next) {
   try {
-    const {userId} = req.auth;
+    const userId = Number(req.auth.userId);
+    const tradeId = Number(req.params.tradeId);
+
+    // query 유효성 검사
+    if (!Number.isInteger(tradeId)) throw errors.invalidQuery();
+
+    const tradeHistory = await tradeService.patchTradeApprove(tradeId, userId);
+
+    return res.status(201).json(tradeHistory);
   } catch (error) {
     next(error);
   }
@@ -55,9 +63,14 @@ export async function approveTrade(req, res, next) {
 // NOTE: 교한 제시 거절
 export async function rejectTrade(req, res, next) {
   try {
-    const {userId} = req.auth;
+    const tradeId = Number(req.params.tradeId);
 
-    
+    // query 유효성 검사
+    if (!Number.isInteger(tradeId)) throw errors.invalidQuery();
+
+    const tradeHistory = await tradeService.patchTradeReject(tradeId);
+
+    return res.status(201).json(tradeHistory);
   } catch (error) {
     next(error);
   }

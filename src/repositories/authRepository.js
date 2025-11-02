@@ -16,6 +16,19 @@ async function findByEmail(email) {
   });
 }
 
+// nickname만 반환
+async function findNickname(id) {
+  const user = await prisma.user.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      nickname: true,
+    },
+  });
+  return user?.nickname ?? null;
+}
+
 async function create(user) {
   return prisma.user.create({
     data: {
@@ -56,6 +69,7 @@ async function createOrUpdate(provider, providerId, email, name) {
 export default {
   findById,
   findByEmail,
+  findNickname,
   create,
   update,
   logout,
