@@ -1,11 +1,19 @@
 import express from "express";
+import authMiddleware from "../middlewares/authMiddleware.js";
 import {
   approveTrade,
   getOfferedTradesHistory,
   proposeTrade,
   rejectTrade,
 } from "../controllers/tradeController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
+import {
+  createListing,
+  getListingDetail,
+  getMarketListings,
+  getMyListings,
+  removeListing,
+  updateListing,
+} from "../controllers/listingController.js";
 
 const marketRouter = express.Router();
 
@@ -14,12 +22,18 @@ marketRouter.use("/trades", authMiddleware.verifyAccessToken);
 marketRouter.post(
   "/trades/:cardId",
   authMiddleware.verifyOfferedCardAuth,
-  proposeTrade
+  getOfferedTradesHistory
 );
+
+marketRouter.use(authMiddleware.verifyAccessToken);
+
+// NOTE: 교환 api
+marketRouter.post("/trades/:cardId", proposeTrade);
+
 // NOTE: 교환 제시 목록 조회 api
 marketRouter.get(
   "/trades/:cardId",
-  authMiddleware.verifyCardAuth,
+  authMiddleware.verifyBodyCardAuth,
   getOfferedTradesHistory
 );
 // NOTE: 교환 제시 승인
@@ -34,5 +48,39 @@ marketRouter.patch(
   authMiddleware.verifyTradeAuth,
   rejectTrade
 );
+
+// marketRouter.post("/purchase");
+
+const listingRouter = express.Router();
+
+marketRouter.use("/listings", listingRouter);
+
+// NOTE: /market/listings
+listingRouter
+  .route("/")
+  .get(getMarketListings)
+  .post(
+    authMiddleware.verifyAccessToken,
+    authMiddleware.verifyBodyCardAuth,
+    createListing
+  );
+
+// NOTE: /market/listings/:cardId
+listingRouter
+  .route("/:cardId")
+  .get(getListingDetail)
+  .patch(
+    authMiddleware.verifyAccessToken,
+    authMiddleware.verifyParamsCardAuth,
+    updateListing
+  )
+  .delete(
+    authMiddleware.verifyAccessToken,
+    authMiddleware.verifyParamsCardAuth,
+    removeListing
+  );
+
+// NOTE: /market/listings/me
+listingRouter.route("/me").get(getMyListings);
 
 export default marketRouter;
