@@ -81,13 +81,14 @@ model UserPhotocards {
 }
 
 model TradePosts {
-  id          Int      @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   // price          Int
-  trade_grade Grade    @default(COMMON)
-  trade_genre Genre    @default(KPOP)
-  trade_note  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  total_issued Int
+  trade_grade  Grade    @default(COMMON)
+  trade_genre  Genre    @default(KPOP)
+  trade_note   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   UserPhotocards UserPhotocards[] // userPhotocard
 }
