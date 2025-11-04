@@ -179,6 +179,7 @@ async function removeListing(cardId) {
   });
   return removedListing;
 }
+
 async function getListingDetail(cardId) {
   const listingDetail = await listingRepository.findByCardId({ cardId });
   return listingDetail;
@@ -193,24 +194,33 @@ async function getMarketListings({
   keyword,
   orderByOption = "recent",
 }) {
-  // 페이지네이션
-  const listCount = await listingRepository.findByPostId().length;
-
   // grade, genre 검증
-  if (!Object.values(Grade).includes(grade))
+  if (grade && !Object.values(Grade).includes(grade))
     throw errors.invalidQuery("유효하지 않은 등급입니다.");
-  if (!Object.values(Genre).includes(genre))
+  if (genre && !Object.values(Genre).includes(genre))
     throw errors.invalidQuery("유효하지 않은 장르입니다.");
 
-  // 매진 필터링
-
-  // 검색 필터링
-  // const filteredWhere = {
-  //   ...baseWhere,
-  //   ...(grade && { grade }),
-  //   ...(genre && { genre }),
-  //   ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
-  // };
+  // isSoldOut 품절 검증
+  const isSoldOutCheck =
+    isSoldOut.toLowerCase() === "true"
+      ? true
+      : isSoldOut === "false"
+      ? false
+      : undefined;
+  if (isSoldOutCheck === undefined)
+    throw errors.invalidQuery("유효하지 않은 isSoldOut입니다.");
+  
+  // 필터링 (grade, genre, isSoldOut, keyword)
+  const where = {
+    ...(grade && { grade }),
+    ...(genre && { genre }),
+    ...(isSoldOutCheck !== undefined && {
+      userPhotocards: isSoldOutCheck
+        ? { none: { is_sale: true } } // userPhotocards에 is_sale이 모두 false인 것만 post 남김
+        : { some: { is_sale: true } }, // userPhotocards에 is_sale이 하나라도 true면 post 남김
+    }),
+    ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
+  };
 
   // 정렬
   let orderBy = undefined;
@@ -220,20 +230,23 @@ async function getMarketListings({
 
   // tradePosts 테이블 조회
   const lists = await listingRepository.findAll({
-    ...(cursor && { cursor }),
-    ...(grade && { grade }),
-    ...(genre && { genre }),
-    ...(orderBy && { orderBy }),
-    ...(keyword && { keyword }),
-    ...(isSoldOut && { isSoldOut }),
+    where,
+    take,
+    cursor,
+    orderBy,
   });
 
-  // tradePost 마지막 id와 cursor가 같으면 false, 아니면 true
-  const lastData = await prisma.findLast; // 으아
+  // tradePost 마지막 id와 nextCursor가 같으면 false, 아니면 true
+  const nextCursor = lists.length ? lists[lists.length - 1].id : null;
+  const lastData = await prisma.tradePosts.findFirst({
+    orderBy: { id: "desc" },
+  });
+  const hasMore = lastData?.id === nextCursor ? false : true;
+
   return {
-    ...lists,
-    nextCursor: cursor,
-    //hasMore: ,
+    lists,
+    nextCursor,
+    hasMore,
   };
 }
 

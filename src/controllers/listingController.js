@@ -72,7 +72,7 @@ export async function getListingDetail(req, res, next) {
 
 export async function getMarketListings(req, res, next) {
   try {
-    if (!req.query || Object.keys(listingData).length === 0)
+    if (!req.query || Object.keys(req.query).length === 0)
       throw errors.invalidQuery();
     const {
       take = 15,
@@ -85,17 +85,21 @@ export async function getMarketListings(req, res, next) {
     } = req.query;
 
     const takeNum = +take;
-    const cursorNum = +cursor;
     if (isNaN(takeNum) || takeNum < 0)
       throw errors.invalidData("유효하지 않은 take입니다.");
+
+    // +cursor 전 null/undefined 처리
+    if (cursor == null) throw errors.invalidQuery("유효하지 않은 cursor입니다."); // 맞나?
+    const cursorNum = +cursor;
     if (isNaN(cursorNum) || cursorNum < 0)
       throw errors.invalidData("유효하지 않은 cursor입니다.");
+
     if (keyword && keyword.length > 50)
       throw errors.invalidData("검색어는 최대 50자까지 입력할 수 있습니다.");
 
     const listings = await listingService.getMarketListings({
-      take,
-      cursor,
+      take: takeNum,
+      cursor: cursorNum,
       grade,
       genre,
       isSoldOut,
