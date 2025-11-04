@@ -39,7 +39,7 @@ model Photocards {
   price        Int
   image_url    String?
   description  String?
-  total_issued Int
+  total_issued Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -82,7 +82,7 @@ model UserPhotocards {
 
 model TradePosts {
   id          Int      @id @default(autoincrement())
-  total_count Int
+  total_count Int      @default(0)
   trade_grade Grade    @default(COMMON)
   trade_genre Genre    @default(KPOP)
   trade_note  String?
