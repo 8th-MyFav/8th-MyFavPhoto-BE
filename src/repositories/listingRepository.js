@@ -125,6 +125,16 @@ async function deleteTradePost({ tx, tradePostId }) {
   });
 }
 
+/* get market listings */
+
+async function findAll({ orderBy, take, grade, genre, isSoldOut, keyword }) {
+  return prisma.tradePosts.findMany({
+    where: { name: { contains: keyword }, grade, genre, isSoldOut },
+    // orderBy: {(orderBy === 'recent' ? {createdAt: desc} : orderBy === price_asc? {price: asc} : {price: desc})}, // (recent)createdAt: desc, (price_asc)price: asc, (price_desc)price: desc
+    // take,
+  });
+}
+
 export default {
   findByCardId,
   findAvailable,
@@ -139,4 +149,5 @@ export default {
   updateTradePost,
   findStatusTrue,
   deleteTradePost,
+  findAll,
 };

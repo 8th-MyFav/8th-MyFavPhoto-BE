@@ -144,7 +144,7 @@ async function updateListing(listingData) {
     return {
       tradePostId,
       cardId,
-      ...(targetCount !== null && { targetSaleCount: targetCount }), // 수정 요청한 판매 개수
+      // ...(targetCount !== null && { targetSaleCount: targetCount }), // 수정 요청한 판매 개수
       ...(total_count !== undefined && { total_count }),
       ...(trade_grade && { trade_grade }),
       ...(trade_genre && { trade_genre }),
@@ -179,9 +179,74 @@ async function removeListing(cardId) {
   });
   return removedListing;
 }
+async function getListingDetail(cardId) {
+  const listingDetail = await listingRepository.findByCardId({ cardId });
+  return listingDetail;
+}
+
+async function getMarketListings({
+  take = 15,
+  cursor,
+  grade,
+  genre,
+  isSoldOut,
+  keyword,
+  orderByOption = "recent",
+}) {
+  // 페이지네이션
+  const listCount = await listingRepository.findByPostId().length;
+
+  // grade, genre 검증
+  if (!Object.values(Grade).includes(grade))
+    throw errors.invalidQuery("유효하지 않은 등급입니다.");
+  if (!Object.values(Genre).includes(genre))
+    throw errors.invalidQuery("유효하지 않은 장르입니다.");
+
+  // 매진 필터링
+
+  // 검색 필터링
+  // const filteredWhere = {
+  //   ...baseWhere,
+  //   ...(grade && { grade }),
+  //   ...(genre && { genre }),
+  //   ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
+  // };
+
+  // 정렬
+  let orderBy = undefined;
+  if (orderByOption === "recent") orderBy = { createdAt: "desc" };
+  if (orderByOption === "price_desc") orderBy = { price: "desc" };
+  if (orderByOption === "price_asc") orderBy = { price: "asc" };
+
+  // tradePosts 테이블 조회
+  const lists = await listingRepository.findAll({
+    ...(cursor && { cursor }),
+    ...(grade && { grade }),
+    ...(genre && { genre }),
+    ...(orderBy && { orderBy }),
+    ...(keyword && { keyword }),
+    ...(isSoldOut && { isSoldOut }),
+  });
+
+  // tradePost 마지막 id와 cursor가 같으면 false, 아니면 true
+  const lastData = await prisma.findLast; // 으아
+  return {
+    ...lists,
+    nextCursor: cursor,
+    //hasMore: ,
+  };
+}
+
+async function getMyListings() {
+  const myListings = listingRepository.findByUserId();
+  return myListings;
+}
 
 export default {
   createListing,
   removeListing,
   updateListing,
+  getListingDetail,
+  getMarketListings,
+  getMyListings,
 };

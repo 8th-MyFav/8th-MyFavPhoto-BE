@@ -81,6 +81,6 @@ listingRouter
   );
 
 // NOTE: /market/listings/me
-listingRouter.route("/me").get(getMyListings);
+listingRouter.route("/me").get(authMiddleware.verifyAccessToken, getMyListings);
 
 export default marketRouter;
