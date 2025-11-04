@@ -32,9 +32,10 @@ export async function createCard(req, res, next) {
   try {
     const { userId } = req.auth;
     const cardData = req.body;
-    if (!cardData || Object.keys(cardData).length === 0) {
-      return res.status(400).json({ message: "body가 비어있습니다." });
-    }
+
+    if (!cardData || Object.keys(cardData).length === 0)
+      throw errors.invalidData("body가 비어있습니다.");
+
     const card = await cardService.createCard(userId, cardData);
     return res.status(201).json(card);
   } catch (error) {
