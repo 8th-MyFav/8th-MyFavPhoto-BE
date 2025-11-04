@@ -1,6 +1,6 @@
 import express from "express";
 import authMiddleware from "../middlewares/authMiddleware.js";
-import { createCard, getMyCards } from "../controllers/cardController.js";
+import { createCard, getMyCardDetail, getMyCards } from "../controllers/cardController.js";
 
 /**
  * 카드 관련 라우터
@@ -24,5 +24,7 @@ const cardRouter = express.Router();
 cardRouter.post("/", authMiddleware.verifyAccessToken, createCard);
 
 cardRouter.get("/me", authMiddleware.verifyAccessToken, getMyCards);
+
+cardRouter.get('/:cardId', authMiddleware.verifyAccessToken, getMyCardDetail)
 
 export default cardRouter;

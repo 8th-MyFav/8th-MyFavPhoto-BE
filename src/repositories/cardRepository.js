@@ -35,11 +35,10 @@ import prisma from "../config/prisma.js";
  *   image_url: "https://example.com/card.jpg"
  * }, 1);
  */
-
 async function create(userId, cardData) {
   // tx: 트랜잭션 내에 사용하는 클라이언트 인스턴스
   const result = await prisma.$transaction(async (tx) => {
-    // NOTE: photocard 테이블에 데이터를 추가함
+    // NOTE: Photocards 테이블에 데이터 추기
     const photocard = await tx.Photocards.create({
       data: {
         creator_id: userId,
@@ -54,35 +53,22 @@ async function create(userId, cardData) {
       },
     });
 
-    // NOTE: userPhotocard 테이블에 만들어진 photocard의 id와 생성자 id 외 데이터를 추가
-    const trade_info_id = undefined;
-
-    const userPhotocardData = {
-      owner_id: userId,
-      photocards_id: photocard.id,
-      // trade_info_id,
-      is_sale: false,
-    };
-
-    if (trade_info_id !== undefined) {
-      userPhotocardData.trade_info_id = trade_info_id;
-    }
-
-    const userPhotocard = await tx.UserPhotocards.create({
-      data: userPhotocardData,
-    });
-    return { photocard, userPhotocard };
+    // NOTE: UserPhotocards 테이블에 데이터 추가
+    const userPhotocards = await Promise.all(
+      Array.from({ length: cardData.total_count }).map(() =>
+        tx.UserPhotocards.create({
+          data: {
+            owner_id: userId,
+            photocards_id: photocard.id,
+            is_sale: false,
+          },
+        })
+      )
+    );
+    return { photocard, userPhotocards };
   });
   return result;
 }
-
-/**
- * 카드 단건 조회
- * @param {number} a 첫 번째 숫자
- * @param {number} b 두 번째 숫자
- * @returns {number} 두 숫자의 합
- */
-async function findById(cardId) {}
 
 /**
  * 카드 정보 수정
@@ -164,9 +150,24 @@ async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
   };
 }
 
+/**
+ * 특정 카드 조회
+ * @param {Object} params
+ * @param {number} params.cardId
+ * @returns {Promise<Object|null>}
+ */
+
+async function findByCardId(cardId) {
+  const cardDetail = await prisma.Photocards.findUnique({
+    where: { id: cardId },
+  });
+  // console.log("cardDetail: ", cardDetail);
+  return cardDetail;
+}
+
 export default {
   create,
-  findById,
   update,
   findByUserId,
+  findByCardId,
 };

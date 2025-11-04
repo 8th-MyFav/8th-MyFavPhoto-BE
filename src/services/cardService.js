@@ -74,7 +74,19 @@ async function getMyCards({ userId, page, pageSize, grade, genre, keyword }) {
   return myCards;
 }
 
+async function getMyCardDetail({ userId, cardId }) {
+  if (!userId) throw errors.unauthorized();
+
+  if (!cardId) throw errors.invalidData("card id가 전달되지 않았습니다.");
+
+  const myCardDetail = await cardRepository.findByCardId(cardId);
+  if (!myCardDetail) throw errors.cardNotFound();
+  if (myCardDetail.creator_id !== userId) throw errors.forbidden();
+  return myCardDetail;
+}
+
 export default {
   createCard,
   getMyCards,
+  getMyCardDetail,
 };

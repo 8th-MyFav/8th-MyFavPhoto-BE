@@ -40,9 +40,21 @@ async function unreadCount(receiver_id) {
   });
 }
 
+// NOTE: 알림 생성 - 트랜잭션 사용
+async function create(tx, receiver_id, category, content) {
+  return tx.notifications.create({
+    data: {
+      receiver_id,
+      category,
+      content,
+    },
+  });
+}
+
 export default {
   findByUserId,
   findById,
   readById,
   unreadCount,
+  create,
 };
