@@ -22,16 +22,38 @@ const verifyRefreshToken = expressjwt({
   getToken: (req) => req.cookies.refreshToken,
 });
 
-// NOTE: /:cardId가 현재 유저의 카드인가?
-// params로 들어온 카드가 현재 유저 카드인지 확인 -> 판매 올리기, 판매 내리기 등
-async function verifyCardAuth(req, res, next) {
+// body로 들어온 카드가 현재 유저 카드인지 확인 -> 판매 올리기
+async function verifyBodyCardAuth(req, res, next) {
+  const { userId } = req.auth;
+  const cardId = Number(req.body.cardId);
+  try {
+    // 카드 id 유효성 검사
+    if (!cardId || isNaN(cardId))
+      throw errors.badRequest("유효한 카드 ID가 아닙니다.");
+    
+    // 카드 존재 여부 조회
+    const userCard = await cardRepository.findByCardId(Number(cardId));
+    if (!userCard) throw errors.notFound("존재하지 않는 카드입니다.");
+
+    // 카드 생성자 검증
+    if (userCard.creator_id !== userId)
+      throw errors.forbidden("해당 카드의 생성자가 아닙니다.");
+
+    next();
+  } catch (error) {
+    return next(error);
+  }
+}
+
+// params로 들어온 카드가 현재 유저 카드인지 확인 -> 판매 수정하기, 판매 내리기 등
+async function verifyParamsCardAuth(req, res, next) {
   const { userId } = req.auth;
   const { cardId } = req.params;
   try {
     // 일단 카드 id로 photocards id 구하기
     const userCard = await userCardRepository.findById(Number(cardId));
 
-    if (!userCard) throw errors.cardNotFound();
+    if (!userCard) throw errors.cardNotFound("카드가 없습니다.");
     // -> photocards id로 creator id 구하기
     const cardInfo = await cardRepository.findByCardId(userCard.photocards_id);
 
@@ -109,7 +131,8 @@ async function verifyNotifAuth(req, res, next) {
 export default {
   verifyAccessToken,
   verifyRefreshToken,
-  verifyCardAuth,
+  verifyBodyCardAuth,
+  verifyParamsCardAuth,
   verifyOfferedCardAuth,
   verifyTradeAuth,
   verifyNotifAuth,
