@@ -115,15 +115,9 @@ async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
     Object.values(Grade).map((grade) => [grade, 0])
   );
 
-  console.log("groupGrades: ", groupGrades); // [ { _count: { grade: 1 }, grade: 'RARE' } ]
-  console.log("gradeCounts: ", gradeCounts); // { COMMON: 0, RARE: 0, SUPER_RARE: 0, LEGENDARY: 0 }
-
   groupGrades.forEach(
     ({ grade, _count }) => (gradeCounts[grade] = _count.grade)
   );
-
-  console.log("forEach group grades: ", groupGrades); // [ { _count: { grade: 1 }, grade: 'RARE' } ]
-  console.log("forEach grade counts: ", gradeCounts);
 
   const lists = await prisma.Photocards.findMany({
     where: filteredWhere,
@@ -133,6 +127,7 @@ async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
     select: {
       id: true,
       creator_id: true,
+      nickname: true,
       name: true,
       grade: true,
       genre: true,
@@ -158,11 +153,16 @@ async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
  */
 
 async function findByCardId(cardId) {
-  const cardDetail = await prisma.Photocards.findUnique({
+  const cardDetail = await prisma.photocards.findUnique({
     where: { id: cardId },
   });
-  // console.log("cardDetail: ", cardDetail);
   return cardDetail;
+}
+
+async function findCardByCardId({ tx, cardId }) {
+  return tx.photocards.findUnique({
+    where: { id: cardId },
+  });
 }
 
 export default {
@@ -170,4 +170,8 @@ export default {
   update,
   findByUserId,
   findByCardId,
+  findCardByCardId,
 };
+
+// 승인/거절 => 테이블
+// 마켓 카드 구매하기

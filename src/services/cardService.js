@@ -22,15 +22,6 @@ import * as errors from "../utils/errors.js"; // NOTE: 일단 errors.메서드()
  * TODO: 필드의 타입/범위까지 체크할 것
  */
 async function createCard(userId, cardData) {
-  if (!userId) {
-    const error = new Error("UNAUTHORIZED");
-    error.code = 401;
-    error.data = {
-      errorCode: "UNAUTHORIZED",
-      message: "로그인이 필요합니다.",
-    };
-    throw error;
-  }
   if (
     !cardData.name ||
     !cardData.grade ||
