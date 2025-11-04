@@ -201,15 +201,15 @@ async function getMarketListings({
     throw errors.invalidQuery("유효하지 않은 장르입니다.");
 
   // isSoldOut 품절 검증
-  const isSoldOutCheck =
-    isSoldOut.toLowerCase() === "true"
-      ? true
-      : isSoldOut === "false"
-      ? false
-      : undefined;
-  if (isSoldOutCheck === undefined)
-    throw errors.invalidQuery("유효하지 않은 isSoldOut입니다.");
-  
+  let isSoldOutCheck;
+
+  if (typeof isSoldOut === "string") {
+    const lowerCase = isSoldOut.toLowerCase();
+    if (lowerCase === "true") isSoldOutCheck = true;
+    else if (lowerCase === "false") isSoldOutCheck = false;
+    else throw errors.invalidQuery("유효하지 않은 isSoldOut입니다.");
+  }
+
   // 필터링 (grade, genre, isSoldOut, keyword)
   const where = {
     ...(grade && { grade }),
@@ -236,6 +236,23 @@ async function getMarketListings({
     orderBy,
   });
 
+  const formattedList = lists.map((post) => {
+    // 판매 중인 카드만 필터링
+    const availableCards = post.UserPhotocards.filter((u) => !u.is_sale);
+
+    return {
+      id: post.id,
+      name: post.UserPhotocards[0]?.photocard.name ?? "",
+      nickname: post.UserPhotocards[0]?.photocard.creator.nickname ?? "",
+      grade: post.trade_grade,
+      genre: post.trade_genre,
+      price: post.UserPhotocards[0]?.photocard.price ?? 0,
+      total: post.total_count,
+      available: availableCards.length,
+      image_url: post.UserPhotocards[0]?.photocard.image_url ?? "",
+    };
+  });
+
   // tradePost 마지막 id와 nextCursor가 같으면 false, 아니면 true
   const nextCursor = lists.length ? lists[lists.length - 1].id : null;
   const lastData = await prisma.tradePosts.findFirst({
@@ -244,7 +261,7 @@ async function getMarketListings({
   const hasMore = lastData?.id === nextCursor ? false : true;
 
   return {
-    lists,
+    lists: formattedList,
     nextCursor,
     hasMore,
   };

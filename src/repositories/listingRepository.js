@@ -138,15 +138,15 @@ async function findAll({ where, take, cursor, orderBy }) {
     take, // 기준점 이후 개수 제한 반환
     cursor: cursor ? { id: cursor } : undefined, // 기준점 기준: id
     skip: cursor ? 1 : 0, // 기준점 있으면 제외, 없으면 포함 .. 왜??
-    orderBy, 
+    orderBy,
     include: {
       // userPhotocards join
-      userPhotocards: {
+      UserPhotocards: {
         select: {
           id: true,
           is_sale: true,
           // photocards join
-          photocards: {
+          photocard: {
             select: {
               name: true,
               grade: true,
@@ -156,7 +156,7 @@ async function findAll({ where, take, cursor, orderBy }) {
             },
           },
         },
-      }, 
+      },
     },
   });
 }
