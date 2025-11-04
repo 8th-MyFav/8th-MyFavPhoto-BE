@@ -31,17 +31,17 @@ model User {
 }
 
 model Photocards {
-  id          Int      @id @default(autoincrement())
-  creator_id  Int // FK User
-  name        String
-  grade       Grade    @default(COMMON)
-  genre       Genre    @default(KPOP)
-  price       Int
-  image_url   String?
-  description String?
-  total_count Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  creator_id   Int // FK User
+  name         String
+  grade        Grade    @default(COMMON)
+  genre        Genre    @default(KPOP)
+  price        Int
+  image_url    String?
+  description  String?
+  total_issued Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   creator        User             @relation(fields: [creator_id], references: [id])
   userPhotocards UserPhotocards[]
@@ -81,14 +81,13 @@ model UserPhotocards {
 }
 
 model TradePosts {
-  id           Int      @id @default(autoincrement())
-  // price          Int
-  total_issued Int
-  trade_grade  Grade    @default(COMMON)
-  trade_genre  Genre    @default(KPOP)
-  trade_note   String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  total_count Int
+  trade_grade Grade    @default(COMMON)
+  trade_genre Genre    @default(KPOP)
+  trade_note  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   UserPhotocards UserPhotocards[] // userPhotocard
 }

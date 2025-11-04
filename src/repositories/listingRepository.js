@@ -10,11 +10,11 @@ async function findByCardId({ tx, cardId }) {
 }
 
 // NOTE: 판매할 userPhotocards Id 조회 + 개수제한
-async function findAvailable({ tx, cardId, count }) {
+async function findAvailable({ tx, cardId, total_count }) {
   return tx.userPhotocards.findMany({
     where: { photocards_id: cardId, is_sale: false },
     select: { id: true },
-    take: count,
+    take: total_count,
   });
 }
 
@@ -73,11 +73,11 @@ async function setSaleStatus({ tx, ids }) {
   });
 }
 
-// NOTE: photocards 테이블 정보 수정
-async function updatePhotocard({ tx, cardId, genre, grade }) {
+// NOTE: photocards 테이블 가격 수정 (genre, grade 고정)
+async function updatePhotocard({ tx, cardId, price }) {
   return tx.photocards.update({
     where: { id: cardId },
-    data: { genre, grade },
+    data: { price },
   });
 }
 
@@ -119,6 +119,12 @@ async function findStatusTrue({ tx, cardId }) {
   });
 }
 
+async function deleteTradePost({ tx, tradePostId }) {
+  return tx.tradePosts.delete({
+    where: { id: tradePostId },
+  });
+}
+
 export default {
   findByCardId,
   findAvailable,
@@ -132,4 +138,5 @@ export default {
   findTradePostIdByCardId,
   updateTradePost,
   findStatusTrue,
+  deleteTradePost,
 };
