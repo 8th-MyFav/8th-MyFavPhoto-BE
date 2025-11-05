@@ -61,7 +61,7 @@ export async function getMyCards(req, res, next) {
         .status(400)
         .json({ message: "페이지 크기는 1에서 50 사이여야 합니다." });
     }
-    if (keyword && keyword.length > 50) {
+    if (keyword && keyword.length > 50) { 
       return res
         .status(400)
         .json({ message: "검색어는 최대 50자까지 입력할 수 있습니다." });
