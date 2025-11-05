@@ -2,12 +2,10 @@ import { Genre, Grade } from "@prisma/client";
 import prisma from "../config/prisma.js";
 import listingRepository from "../repositories/listingRepository.js";
 import * as errors from "../utils/errors.js";
-import cardRepository from "../repositories/cardRepository.js";
 
 // NOTE: 거래 게시글 생성
 async function createListing({
   cardId,
-  // price,
   total_count,
   trade_grade,
   trade_genre,
@@ -35,12 +33,18 @@ async function createListing({
     console.log("ids: ", ids);
 
     // 2. tradePosts 테이블에 trade Post 생성
+    // photocard cardid로 price 접근해서 price 변수에 할당
+    const { price: priceValue } = await prisma.photocards.findUnique({
+      where: { id: cardId },
+      select: { price: true },
+    }); // { price: 1000 }객체로 옴
     const tradePost = await listingRepository.createTradePost({
       tx,
-      total_issued: total_count,
+      total_count,
       trade_grade,
       trade_genre,
       trade_note,
+      price: priceValue, // 값(숫자)로 넘겨야 함
     });
     console.log("tradePost: ", tradePost);
 
@@ -51,18 +55,11 @@ async function createListing({
       trade_info_id: tradePost.id,
     });
     // 업데이트 개수가 예상과 다를 시
-    if (update.coount !== ids.length) {
+    if (update.count !== ids.length) {
       throw errors.validationError(
         `일부 카드 업데이트 실패: 예상 ${ids.length}개, 실제 ${update.count}개`
       );
     }
-
-    // 4. 판매 카드 조회
-    const allCards = await listingRepository.findUserPhotocardsByCardId({
-      tx,
-      cardId,
-    });
-    const saleCards = allCards.filter((card) => card.is_sale);
 
     return {
       id: tradePost.id, //post
@@ -85,14 +82,18 @@ async function updateListing(listingData) {
       listingData;
     if (!cardId) throw errors.invalidData("유효하지 않은 카드 id입니다");
 
-    // 현재 상태 조회
-    const allCards = await listingRepository.findUserPhotocardsByCardId({
+    const tradePostId = await listingRepository.findTradePostIdByCardId({
       tx,
       cardId,
     });
 
-    let targetCount = null;
-    let tradePostId = null;
+    if (!tradePostId) {
+      throw errors.notFound("판매 게시글을 찾을 수 없습니다.");
+    }
+
+    // NOTE: 비관적 잠금(Pessimistic Lock)을 통해 tradePost 레코드를 잠급니다.
+    // 이 트랜잭션이 끝날 때까지 다른 트랜잭션은 이 레코드를 수정할 수 없습니다.
+    await listingRepository.findAndLockTradePostById({ tx, id: tradePostId });
 
     // 1. 판매 수량 조절
     // 기존 판매 개수, 새 판매 개수
@@ -101,10 +102,14 @@ async function updateListing(listingData) {
       if (total_count > cardCount || total_count < 0)
         throw errors.validationError("유효하지 않은 카드 수량입니다.");
 
+      const allCards = await listingRepository.findUserPhotocardsByCardId({
+        tx,
+        cardId,
+      });
       const currentSale = allCards.filter((card) => card.is_sale);
       const currentUnsale = allCards.filter((card) => !card.is_sale);
       const currentCount = currentSale.length;
-      targetCount = total_count;
+      const targetCount = total_count;
 
       // 판매 수량 증가: 기존 false -> true
       if (currentCount < targetCount) {
@@ -125,11 +130,6 @@ async function updateListing(listingData) {
 
     // 2. 교환 희망 정보 변경 (등급, 장르, 노트)
     if (trade_grade || trade_genre || trade_note) {
-      tradePostId = await listingRepository.findTradePostIdByCardId({
-        tx,
-        cardId,
-      });
-
       const tradeData = {};
       if (trade_grade) tradeData.trade_grade = trade_grade;
       if (trade_genre) tradeData.trade_genre = trade_genre;
@@ -145,7 +145,7 @@ async function updateListing(listingData) {
     // 3. 카드 가격 변경
     if (price !== undefined) {
       if (price < 0) throw errors.invalidData("유효하지 않은 가격입니다.");
-      await listingRepository.updatePhotocard({ tx, cardId, price });
+      await listingRepository.updateTradePrice({ tx, tradePostId, price });
     }
 
     return {
@@ -233,18 +233,10 @@ async function getMarketListings({
   let orderBy;
   switch (orderByOption) {
     case "price_asc":
-      orderBy = {
-        UserPhotocards: {
-          orderBy: { photocard: { price: "asc" } },
-        },
-      };
+      orderBy = { price: "asc" };
       break;
     case "price_desc":
-      orderBy = {
-        UserPhotocards: {
-          orderBy: { photocard: { price: "desc" } },
-        },
-      };
+      orderBy = { price: "desc" };
       break;
     case "recent":
     default:
@@ -264,17 +256,18 @@ async function getMarketListings({
     const availableCards = post.UserPhotocards.filter(
       (userPhotocard) => !userPhotocard.is_sale
     );
-
+    // 첫번째 카드
+    const firstCard = post.UserPhotocards[0]?.photocard;
     return {
       id: post.id,
-      name: post.UserPhotocards[0]?.photocard.name ?? "",
-      nickname: post.UserPhotocards[0]?.photocard.creator.nickname ?? "",
-      grade: post.trade_grade,
-      genre: post.trade_genre,
-      price: post.UserPhotocards[0]?.photocard.price ?? 0,
+      name: firstCard.name ?? "",
+      nickname: firstCard.creator.nickname ?? "",
+      grade: firstCard.trade_grade,
+      genre: firstCard.trade_genre,
+      price: post.price ?? 0,
       total: post.total_count,
       available: availableCards.length,
-      image_url: post.UserPhotocards[0]?.photocard.image_url ?? "",
+      image_url: firstCard.image_url ?? "",
     };
   });
 

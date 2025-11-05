@@ -51,7 +51,7 @@ async function verifyParamsCardAuth(req, res, next) {
   const cardId = Number(req.params.cardId);
   try {
     // 카드 id로 photocards 구하기
-    const photocard = await cardRepository.findById(cardId);
+    const photocard = await cardRepository.findByCardId(cardId);
 
     if (!photocard) throw errors.cardNotFound("카드가 없습니다.");
 

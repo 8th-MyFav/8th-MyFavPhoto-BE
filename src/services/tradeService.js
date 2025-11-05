@@ -14,11 +14,13 @@ async function createTrade(userId, tradePostId, offeredCardId, content) {
     const requester = await authRepository.findById(userId);
 
     // 타겟 포토카드 하나만 가져오기
-    const targetPhotocard = await userCardRepository.findCardByTradePostId(tradePostId);
+    const targetPhotocard = await userCardRepository.findCardByTradePostId(
+      tradePostId
+    );
     if (!targetPhotocard)
       throw errors.cardNotFound("교환할 카드가 존재하지 않습니다.");
 
-    const targetCardId = targetPhotocard.photocards_id
+    const targetCardId = targetPhotocard.photocards_id;
     const photocardInfo = await cardRepository.findByCardId(targetCardId);
 
     // 알림 내용
@@ -59,14 +61,13 @@ async function createTrade(userId, tradePostId, offeredCardId, content) {
 async function getTradesHistory(cardId) {
   try {
     // 교환 제안 존재 확인
-    const tradeHistories = await tradeRepository.findById(cardId);
+    const tradeHistories = await tradeRepository.findByCardId(cardId);
 
-    if (!tradeHistories) {
+    if (tradeHistories.length === 0) {
       throw errors.tradeNotFound("제안 내역이 없습니다.");
     }
 
     // 교환 제안 목록 + 제안한 카드의 정보 포함 (offeredCard Info 필요)
-    console.log(tradeHistories)
     return tradeHistories;
   } catch (error) {
     if (error.code === 404) {

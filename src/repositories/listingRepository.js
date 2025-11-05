@@ -24,12 +24,16 @@ async function createTradePost({
   trade_grade,
   trade_genre,
   trade_note,
+  price,
+  total_count,
 }) {
   return tx.tradePosts.create({
     data: {
       trade_grade,
       trade_genre,
       trade_note,
+      price,
+      total_count,
     },
   });
 }
@@ -78,10 +82,10 @@ async function setSaleStatus({ tx = prisma, ids }) {
   });
 }
 
-// NOTE: photocards 테이블 가격 수정 (genre, grade 고정)
-async function updatePhotocard({ tx = prisma, cardId, price }) {
-  return tx.photocards.update({
-    where: { id: cardId },
+// NOTE: tradePosts 테이블 가격 수정 (genre, grade 고정)
+async function updateTradePrice({ tx = prisma, tradePostId, price }) {
+  return tx.tradePosts.update({
+    where: { id: tradePostId },
     data: { price },
   });
 }
@@ -115,6 +119,16 @@ async function updateTradePost({
   });
 }
 
+// NOTE: trade post id로 잠금 설정
+async function findAndLockTradePostById({ tx = prisma, id }) {
+  return tx.tradePosts
+    .findUniqueOrThrow({
+      // 테이블에서 id 일치하는 당일 행 조회
+      where: { id },
+    })
+    .forUpdate(); // 행 수준 잠금 (다른 트랜잭션에서 수정/삭제 금지)
+}
+
 /* delete listing */
 
 async function findStatusTrue({ tx = prisma, cardId }) {
@@ -137,8 +151,8 @@ async function findAll({ where, take, cursor, orderBy }) {
     where,
     take, // 기준점 이후 개수 제한 반환
     cursor: cursor ? { id: cursor } : undefined, // 기준점 기준: id
-    skip: cursor ? 1 : 0, // 기준점 있으면 제외, 없으면 포함 .. 왜??
-    orderBy,
+    skip: cursor ? 1 : 0, // 기준점 있으면 제외, 없으면 포함
+    orderBy, // QUES: 이 orderBy가 findAll 함수 외부에서 동적으로 결정될 일이 뭐가 있지..?
     include: {
       // userPhotocards join
       UserPhotocards: {
@@ -170,10 +184,11 @@ export default {
   countByCardId,
   findUserPhotocardsByCardId,
   setSaleStatus,
-  updatePhotocard,
+  updateTradePrice,
   findTradePostIdByCardId,
   updateTradePost,
   findStatusTrue,
   deleteTradePost,
   findAll,
+  findAndLockTradePostById,
 };
