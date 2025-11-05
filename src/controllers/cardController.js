@@ -16,7 +16,7 @@ import cardService from "../services/cardService.js";
  * @param {string} req.body.grade - 카드 등급 (COMMON, RARE, SUPER_RARE, LEGENDARY)
  * @param {string} req.body.genre - 카드 장르 (KPOP, ACTOR, ESPORTS, KBO, ANIMATION)
  * @param {number} req.body.price - 카드 가격
- * @param {number} req.body.total_count - 카드 총 수량
+ * @param {number} req.body.total_issued - 카드 총 발행량
  * @param {string} [req.body.description] - 카드 설명
  * @param {string} [req.body.image_url] - 카드 이미지 URL
  * @param {Response} res - Express 응답 객체

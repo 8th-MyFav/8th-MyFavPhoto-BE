@@ -11,7 +11,7 @@ import * as errors from "../utils/errors.js"; // NOTE: 일단 errors.메서드()
  * @param {string} cardData.grade - 카드 등급 (COMMON, RARE, SUPER_RARE, LEGENDARY)
  * @param {string} cardData.genre - 카드 장르 (KPOP, ACTOR, ESPORTS 등)
  * @param {number} cardData.price - 카드 가격
- * @param {number} cardData.total_count - 카드 총 수량
+ * @param {number} cardData.total_issued - 카드 총 발행량
  * @param {string} [cardData.description] - 카드 설명
  * @param {string} [cardData.image_url] - 카드 이미지 URL
  *
@@ -27,7 +27,7 @@ async function createCard(userId, cardData) {
     !cardData.grade ||
     !cardData.genre ||
     !cardData.price ||
-    !cardData.total_count
+    !cardData.total_issued
   ) {
     const error = new Error("INVALID_DATA");
     error.code = 422;
