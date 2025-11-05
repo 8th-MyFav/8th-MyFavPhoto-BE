@@ -128,6 +128,23 @@ async function verifyNotifAuth(req, res, next) {
   }
 }
 
+// NOTE: 교환하거나 구매하는 카드가 내 카드인가? tradePosts Id로 검증
+async function verifyTradePostCardAuth(req, res, next) {
+  const { userId } = req.auth;
+  const tradePostId = Number(req.body.tradePostId);
+  try {
+    // postId 중에 현재 판매 중인 카드 1장
+    const card = await userCardRepository.findFirstByTradePostId(tradePostId);
+    if (!card) throw errors.cardNotFound();
+
+    if (card.owner_id === Number(userId)) throw errors.cannotBuyOwnCard();
+
+    next();
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export default {
   verifyAccessToken,
   verifyRefreshToken,
@@ -136,4 +153,5 @@ export default {
   verifyOfferedCardAuth,
   verifyTradeAuth,
   verifyNotifAuth,
+  verifyTradePostCardAuth,
 };

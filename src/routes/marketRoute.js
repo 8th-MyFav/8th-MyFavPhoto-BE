@@ -23,6 +23,7 @@ marketRouter.use("/trades", authMiddleware.verifyAccessToken);
 marketRouter.post(
   "/trades",
   authMiddleware.verifyOfferedCardAuth,
+  authMiddleware.verifyTradePostCardAuth,
   proposeTrade
 );
 
