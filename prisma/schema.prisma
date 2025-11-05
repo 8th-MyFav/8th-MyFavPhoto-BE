@@ -82,6 +82,7 @@ model UserPhotocards {
 
 model TradePosts {
   id          Int      @id @default(autoincrement())
+  price       Int
   total_count Int      @default(0)
   trade_grade Grade    @default(COMMON)
   trade_genre Genre    @default(KPOP)
