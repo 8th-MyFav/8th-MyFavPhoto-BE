@@ -94,8 +94,16 @@ async function update(cardId, updateData) {}
  * @returns {Promise<{ totalCount: number, gradeCounts: Object, lists: Object[] }>}
  *          카드 총 개수, 등급별 개수 요약, 필터된 카드 목록을 포함한 객체
  */
-async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
-  const baseWhere = { creator_id: userId };
+async function findByUserId({
+  userId,
+  page = 1,
+  pageSize = 15,
+  grade,
+  genre,
+  keyword,
+}) {
+  // 필터 추가
+  const baseWhere = { owner_id: userId, is_sale: true };
   const filteredWhere = {
     ...baseWhere,
     ...(grade && { grade }),
@@ -103,45 +111,70 @@ async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
     ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
   };
 
-  const totalCount = await prisma.photocards.count({ where: baseWhere });
+  // 전체 개수
+  const totalCount = await prisma.userPhotocards.count({ where: baseWhere });
 
-  const groupGrades = await prisma.photocards.groupBy({
-    by: ["grade"],
+  // 등급별 개수
+  const groupGrades = await prisma.userPhotocards.groupBy({
+    by: ["photocard_grade"], // photocard.grade를 alias로 표현
     where: baseWhere,
-    _count: { grade: true },
+    _count: { _all: true }, // 그룹별 데이터 개수
   });
 
+  // 등급 기본값 초기화 (groupBy 관계 필드 지원XX) -> join 수행, 각 userPC별 등급 접근 -> count
   const gradeCounts = Object.fromEntries(
     Object.values(Grade).map((grade) => [grade, 0])
   );
 
-  groupGrades.forEach(
-    ({ grade, _count }) => (gradeCounts[grade] = _count.grade)
+  // 등급별 개수 계산
+  const gradeData = await prisma.userPhotocards.findMany({
+    where: baseWhere,
+    select: { photocard: { select: { grade: true } } },
+  });
+  gradeData.forEach(
+    ({ photocards_grade, _count }) =>
+      (gradeCounts[photocards_grade] = _count._all)
   );
 
-  const lists = await prisma.photocards.findMany({
+  const lists = await prisma.userPhotocards.findMany({
     where: filteredWhere,
     skip: (page - 1) * pageSize,
     take: pageSize,
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
-      creator_id: true,
-      name: true,
-      grade: true,
-      genre: true,
-      price: true,
-      total_issued: true,
-      image_url: true,
       createdAt: true,
       updatedAt: true,
-      creator: { select: { nickname: true } },
+      photocard: {
+        select: {
+          id: true,
+          creator_id: true,
+          grade: true,
+          genre: true,
+          price: true,
+          total_issued: true,
+          image_url: true,
+        },
+      },
     },
   });
+  const formattedList = lists.map((item) => ({
+    id: item.photocard.id,
+    creator_id: item.photocard.creator_id,
+    name: item.photocard.name,
+    grade: item.photocard.grade,
+    genre: item.photocard.genre,
+    price: item.photocard.price,
+    total_issued: item.photocard.total_issued,
+    count: 1, // 유저 보유카드 기준이라 기본 1
+    image_url: item.photocard.image_url,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  }));
   return {
     totalCount,
-    gradeCounts,
-    lists,
+    grade: gradeCounts,
+    lists: formattedList,
   };
 }
 
