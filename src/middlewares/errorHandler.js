@@ -10,10 +10,9 @@ export default function errorHandler(error, req, res, next) {
   return res.status(status).json({
     path: req.path,
     method: req.method,
-    code: error.code,
-    errorCode: error.data.errorCode,
+    code: error.code ?? status,
+    errorCode: error.errorCode ?? "INTERNAL_SERVER_ERROR",
     message: error.message ?? "Internal Server Error",
-    // data: error.data ?? undefined,
     date: new Date(),
   });
 }

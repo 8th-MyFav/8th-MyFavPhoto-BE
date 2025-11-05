@@ -19,8 +19,6 @@ const marketRouter = express.Router();
 
 marketRouter.use("/trades", authMiddleware.verifyAccessToken);
 
-marketRouter.use(authMiddleware.verifyAccessToken);
-
 // NOTE: 교환 제안 생성 api
 marketRouter.post(
   "/trades",

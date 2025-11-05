@@ -1,6 +1,6 @@
 import prisma from "../config/prisma.js";
 
-// userCard id로 카드 검색
+// NOTE: userCard id로 카드 검색
 async function findById(id) {
   return prisma.userPhotocards.findUnique({
     where: {
@@ -9,17 +9,8 @@ async function findById(id) {
   });
 }
 
-// trade_info_id 로 카드 검색해서 하나만 반환
-async function findFirstByTradInfoId(id) {
-  return prisma.userPhotocards.findFirst({
-    where: {
-      trade_info_id: id,
-      is_sale: true,
-    },
-  });
-}
-
-async function changeOwner(tx, id, owner_id) {
+// NOTE: owner 변경
+async function changeOwner(tx = prisma, id, owner_id) {
   return tx.userPhotocards.update({
     where: {
       id,
@@ -28,7 +19,19 @@ async function changeOwner(tx, id, owner_id) {
   });
 }
 
+// FIXME: 나중에 확인 후 리팩토링 필요
+// NOTE: tradePost id로 userPhotocards하나만 반환
+async function findCardByTradePostId(tradePostId) {
+  return prisma.userPhotocards.findFirst({
+    where: {
+      trade_info_id: tradePostId,
+      is_sale: true,
+    },
+  });
+}
+
 export default {
   findById,
   changeOwner,
+  findCardByTradePostId,
 };

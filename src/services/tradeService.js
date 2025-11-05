@@ -13,17 +13,16 @@ async function createTrade(userId, tradePostId, offeredCardId, content) {
     // 교환 요청자 정보
     const requester = await authRepository.findById(userId);
 
-    // 타겟 포토카드 list
-    
+    // 타겟 포토카드 하나만 가져오기
+    const targetPhotocard = await userCardRepository.findCardByTradePostId(tradePostId);
+    if (!targetPhotocard)
+      throw errors.cardNotFound("교환할 카드가 존재하지 않습니다.");
+
+    const targetCardId = targetPhotocard.photocards_id
     const photocardInfo = await cardRepository.findByCardId(targetCardId);
-    if (!photocardInfo)
-      throw errors.cardNotFound("타겟카드가 존재하지 않습니다.");
 
     // 알림 내용
     const notifContent = `${requester.nickname}님이 [${photocardInfo.grade}|${photocardInfo.name}]의 포토카드 교환을 제안했습니다.`;
-
-    // targetCard의 userPhotocardId
-    const tagerUserPhotocardId = await userCardRepository.findById()
 
     // tradehistory 생성 + 교환 제안 알림 생성
     const result = await prisma.$transaction(async (tx) => {
