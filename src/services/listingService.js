@@ -13,7 +13,9 @@ async function createListing({
   trade_genre,
   trade_note,
 }) {
-  const total = await prisma.photocards.count({ where: { id: cardId } });
+  const total = await prisma.userPhotocards.count({
+    where: { photocards_id: cardId },
+  });
   if (total_count > total || total_count < 0)
     throw errors.validationError("유효하지 않은 카드 수량입니다.");
   // if (price < 0) throw errors.invalidData("유효하지 않은 가격입니다.");
@@ -48,7 +50,12 @@ async function createListing({
       ids,
       trade_info_id: tradePost.id,
     });
-    console.log("update: ", update);
+    // 업데이트 개수가 예상과 다를 시
+    if (update.coount !== ids.length) {
+      throw errors.validationError(
+        `일부 카드 업데이트 실패: 예상 ${ids.length}개, 실제 ${update.count}개`
+      );
+    }
 
     // 4. 판매 카드 조회
     const allCards = await listingRepository.findUserPhotocardsByCardId({
@@ -61,7 +68,7 @@ async function createListing({
       id: tradePost.id, //post
       cardId, //photocards
       total_count: ids.length,
-      left_count: ids.length, // QUES: 생성에서 이 데이터 반환이 굳이 필요한가?
+      left_count: ids.length,
       trade_grade: tradePost.trade_grade,
       trade_genre: tradePost.trade_genre,
       trade_note: tradePost.trade_note,

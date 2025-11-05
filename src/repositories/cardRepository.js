@@ -103,7 +103,7 @@ async function findByUserId({
   keyword,
 }) {
   // 필터 추가
-  const baseWhere = { owner_id: userId, is_sale: true };
+  const baseWhere = { owner_id: userId };
   const filteredWhere = {
     ...baseWhere,
     ...(grade && { grade }),
