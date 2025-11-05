@@ -25,6 +25,7 @@ async function createTradePost({
   trade_genre,
   trade_note,
   price,
+  total_count,
 }) {
   return tx.tradePosts.create({
     data: {
@@ -32,6 +33,7 @@ async function createTradePost({
       trade_genre,
       trade_note,
       price,
+      total_count,
     },
   });
 }
