@@ -131,13 +131,12 @@ async function deleteTradePost({ tx = prisma, tradePostId }) {
 }
 
 /* get market listings */
-
 async function findAll({ where, take, cursor, orderBy }) {
   return prisma.tradePosts.findMany({
     where,
     take, // 기준점 이후 개수 제한 반환
     cursor: cursor ? { id: cursor } : undefined, // 기준점 기준: id
-    skip: cursor ? 1 : 0, // 기준점 있으면 제외, 없으면 포함 .. 왜??
+    skip: cursor ? 1 : 0, // 기준점 있으면 제외, 없으면 포함
     orderBy,
     include: {
       // userPhotocards join
@@ -151,6 +150,7 @@ async function findAll({ where, take, cursor, orderBy }) {
               name: true,
               grade: true,
               genre: true,
+              price: true,
               image_url: true,
               creator: { select: { nickname: true } }, // user join
             },

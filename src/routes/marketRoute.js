@@ -25,8 +25,6 @@ marketRouter.post(
   getOfferedTradesHistory
 );
 
-marketRouter.use(authMiddleware.verifyAccessToken);
-
 // NOTE: 교환 api
 marketRouter.post("/trades/:cardId", proposeTrade);
 
