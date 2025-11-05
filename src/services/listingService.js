@@ -223,10 +223,26 @@ async function getMarketListings({
   };
 
   // 정렬
-  let orderBy = undefined;
-  if (orderByOption === "recent") orderBy = { createdAt: "desc" };
-  if (orderByOption === "price_desc") orderBy = { price: "desc" };
-  if (orderByOption === "price_asc") orderBy = { price: "asc" };
+  let orderBy;
+  switch (orderByOption) {
+    case "price_asc":
+      orderBy = {
+        UserPhotocards: {
+          orderBy: { photocard: { price: "asc" } },
+        },
+      };
+      break;
+    case "price_desc":
+      orderBy = {
+        UserPhotocards: {
+          orderBy: { photocard: { price: "desc" } },
+        },
+      };
+      break;
+    case "recent":
+    default:
+      orderBy = { createdAt: "desc" };
+  }
 
   // tradePosts 테이블 조회
   const lists = await listingRepository.findAll({
