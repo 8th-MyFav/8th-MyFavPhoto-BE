@@ -62,8 +62,12 @@ export async function removeListing(req, res, next) {
 
 export async function getListingDetail(req, res, next) {
   try {
-    const cardId = +req.params.cardId;
-    const listingDetail = await listingService.getListingDetail(cardId);
+    const postId = +req.params.postId;
+    if (isNaN(postId))
+      throw errors.invalidData("유효하지 않은 게시글 id입니다.");
+    const listingDetail = await listingService.getListingDetail({
+      postId,
+    });
     return res.status(200).json(listingDetail);
   } catch (error) {
     next(error);

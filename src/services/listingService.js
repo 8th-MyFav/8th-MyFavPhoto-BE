@@ -187,9 +187,38 @@ async function removeListing(cardId) {
   return removedListing;
 }
 
-async function getListingDetail(cardId) {
-  const listingDetail = await listingRepository.findByCardId({ cardId });
-  return listingDetail;
+async function getListingDetail({ postId }) {
+  const listingDetail = await listingRepository.findByPostId({ postId });
+  if (!listingDetail) {
+    throw errors.notFound("판매 게시글");
+  }
+  const photocard = listingDetail.UserPhotocards?.[0]?.photocard;
+  const soldCards = await listingRepository.countSoldByPostId({ postId }); // 이미 팔린 카드
+
+  const formatted = {
+    id: listingDetail.id,
+    trade_grade: listingDetail.trade_grade,
+    trade_genre: listingDetail.trade_genre,
+    trade_note: listingDetail.trade_note,
+    price: listingDetail.price,
+    total_count: listingDetail.total_count,
+    left_count: listingDetail.total_count - soldCards,
+    card: photocard
+      ? {
+          id: photocard.id,
+          nickname: photocard.creator?.nickname,
+          image_url: photocard.image_url,
+          name: photocard.name,
+          description: photocard.description,
+          grade: photocard.grade,
+          genre: photocard.genre,
+        }
+      : null,
+    createdAt: listingDetail.createdAt,
+    updatedAt: listingDetail.updatedAt,
+  };
+
+  return formatted;
 }
 
 async function getMarketListings({

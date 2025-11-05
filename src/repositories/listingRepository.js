@@ -175,6 +175,41 @@ async function findAll({ where, take, cursor, orderBy }) {
   });
 }
 
+/* market listing detail */
+
+async function findByPostId({ tx = prisma, postId }) {
+  return tx.tradePosts.findUnique({
+    where: { id: postId },
+    include: {
+      UserPhotocards: {
+        where: { is_sale: true },
+        take: 1,
+        select: {
+          photocard: {
+            select: {
+              id: true,
+              name: true,
+              grade: true,
+              genre: true,
+              image_url: true,
+              description: true,
+              createdAt: true,
+              updatedAt: true,
+              creator: { select: { nickname: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+async function countSoldByPostId({ tx = prisma, postId }) {
+  return tx.userPhotocards.count({
+    where: { trade_info_id: postId, is_sale: false },
+  });
+}
+
 export default {
   findByCardId,
   findAvailable,
@@ -191,4 +226,6 @@ export default {
   deleteTradePost,
   findAll,
   findAndLockTradePostById,
+  findByPostId,
+  countSoldByPostId,
 };

@@ -66,7 +66,6 @@ listingRouter
 // NOTE: /market/listings/:cardId
 listingRouter
   .route("/:cardId")
-  .get(getListingDetail)
   .patch(
     authMiddleware.verifyAccessToken,
     authMiddleware.verifyParamsCardAuth,
@@ -77,6 +76,9 @@ listingRouter
     authMiddleware.verifyParamsCardAuth,
     removeListing
   );
+
+// NOTE: /market/listings/:postId
+listingRouter.route("/:postId").get(getListingDetail);
 
 // NOTE: /market/listings/me
 listingRouter.route("/me").get(authMiddleware.verifyAccessToken, getMyListings);
