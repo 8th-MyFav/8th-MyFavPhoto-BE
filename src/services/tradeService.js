@@ -14,7 +14,7 @@ async function createTrade(userId, tradePostId, offeredCardId, content) {
     const requester = await authRepository.findById(userId);
 
     // 타겟 포토카드 하나만 가져오기
-    const targetPhotocard = await userCardRepository.findCardByTradePostId(
+    const targetPhotocard = await userCardRepository.findFirstByTradePostId(
       tradePostId
     );
     if (!targetPhotocard)
@@ -77,11 +77,11 @@ async function getTradesHistory(cardId) {
   }
 }
 
-// NOTE: 교환 제안 승인
+// NOTE: 교환 제안 승인 <- userPhotocards가 아니라 photocards id로 들어오는걸로 변경
 async function patchTradeApprove(tradeId, userId) {
   try {
     const tradeHistory = await tradeRepository.findById(tradeId);
-
+    // 타켓 카드 정보
     const photocardInfo = await cardRepository.findByCardId(
       tradeHistory.target_card_id
     );
@@ -100,6 +100,12 @@ async function patchTradeApprove(tradeId, userId) {
     const targetNotifContent = `${targetCardOwnerNickname}님과의 [${photocardInfo.grade}|${photocardInfo.name}]의 포토카드 교환이 성사되었습니다.`;
     const offerNotifContent = `${offeredCardOwnerNickname}님과의 [${photocardInfo.grade}|${photocardInfo.name}]의 포토카드 교환이 성사되었습니다.`;
 
+    // 각각 실제 교환할 카드
+    const targetCard = await userCardRepository.findSellingCardById(tradeHistory.target_card_id);
+    const offeredCard = await userCardRepository.findFirstByCardId(
+      tradeHistory.offered_card_id
+    );
+
     // tradehistory 승인 + 교환 승인 알림 각각 생성
     const result = await prisma.$transaction(async (tx) => {
       // 교환 상태 승인으로 변경
@@ -112,13 +118,13 @@ async function patchTradeApprove(tradeId, userId) {
       // target card 소유자 변경
       const changeTarget = await userCardRepository.changeOwner(
         tx,
-        tradeHistory.target_card_id,
+        targetCard.id,
         offeredCardOwner
       );
       // offered card 소유자 변경
       const changeOffered = await userCardRepository.changeOwner(
         tx,
-        tradeHistory.offered_card_id,
+        offeredCard.id,
         targetCardOwner
       );
 
@@ -141,6 +147,7 @@ async function patchTradeApprove(tradeId, userId) {
 
     return result;
   } catch (error) {
+    console.log(error);
     throw errors.internalServerError();
   }
 }

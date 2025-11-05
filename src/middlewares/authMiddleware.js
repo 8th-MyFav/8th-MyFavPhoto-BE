@@ -99,10 +99,10 @@ async function verifyTradeAuth(req, res, next) {
     if (!tradeHistory) throw errors.tradeNotFound("교환 제안이 없습니다.");
 
     // 카드 소유자와 현재 유저 확인
-    const userCard = await userCardRepository.findById(
+    const cardInfo = await cardRepository.findByCardId(
       tradeHistory.target_card_id
     );
-    if (userCard.owner_id !== Number(userId)) throw errors.forbidden();
+    if (cardInfo.creator_id !== Number(userId)) throw errors.forbidden();
 
     next();
   } catch (error) {

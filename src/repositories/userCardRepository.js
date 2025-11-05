@@ -9,19 +9,36 @@ async function findById(id) {
   });
 }
 
+// NOTE: photocard id로 userPhotocards하나만 반환 - 아무 카드 card용
+async function findFirstByCardId(photocards_id) {
+  return await prisma.userPhotocards.findFirst({
+    where: {
+      photocards_id,
+    },
+  });
+}
+
+// NOTE: photocard id로 userPhotocards하나만 반환 - 판매 중 card용
+async function findSellingCardById(photocards_id) {
+  return await prisma.userPhotocards.findFirst({
+    where: {
+      photocards_id,
+      is_sale: true,
+    },
+  });
+}
+
 // NOTE: owner 변경
 async function changeOwner(tx = prisma, id, owner_id) {
   return tx.userPhotocards.update({
-    where: {
-      id,
-    },
-    data: { owner_id },
+    where: { id },
+    data: { owner_id, is_sale: false },
   });
 }
 
 // FIXME: 나중에 확인 후 리팩토링 필요
 // NOTE: tradePost id로 userPhotocards하나만 반환
-async function findCardByTradePostId(tradePostId) {
+async function findFirstByTradePostId(tradePostId) {
   return prisma.userPhotocards.findFirst({
     where: {
       trade_info_id: tradePostId,
@@ -32,6 +49,8 @@ async function findCardByTradePostId(tradePostId) {
 
 export default {
   findById,
+  findFirstByCardId,
+  findSellingCardById,
   changeOwner,
-  findCardByTradePostId,
+  findFirstByTradePostId,
 };
