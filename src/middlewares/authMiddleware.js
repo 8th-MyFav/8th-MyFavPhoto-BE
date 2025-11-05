@@ -135,7 +135,7 @@ async function verifyTradePostCardAuth(req, res, next) {
   try {
     // postId 중에 현재 판매 중인 카드 1장
     const card = await userCardRepository.findFirstByTradePostId(tradePostId);
-    if (!card) throw errors.cardNotFound();
+    if (!card) throw errors.cardAlreadySold();
 
     if (card.owner_id === Number(userId)) throw errors.cannotBuyOwnCard();
 
