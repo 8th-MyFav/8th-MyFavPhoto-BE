@@ -103,9 +103,9 @@ async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
     ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
   };
 
-  const totalCount = await prisma.Photocards.count({ where: baseWhere });
+  const totalCount = await prisma.photocards.count({ where: baseWhere });
 
-  const groupGrades = await prisma.Photocards.groupBy({
+  const groupGrades = await prisma.photocards.groupBy({
     by: ["grade"],
     where: baseWhere,
     _count: { grade: true },
@@ -119,7 +119,7 @@ async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
     ({ grade, _count }) => (gradeCounts[grade] = _count.grade)
   );
 
-  const lists = await prisma.Photocards.findMany({
+  const lists = await prisma.photocards.findMany({
     where: filteredWhere,
     skip: (page - 1) * pageSize,
     take: pageSize,
@@ -127,7 +127,6 @@ async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
     select: {
       id: true,
       creator_id: true,
-      nickname: true,
       name: true,
       grade: true,
       genre: true,
@@ -136,6 +135,7 @@ async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
       image_url: true,
       createdAt: true,
       updatedAt: true,
+      creator: { select: { nickname: true } },
     },
   });
   return {
