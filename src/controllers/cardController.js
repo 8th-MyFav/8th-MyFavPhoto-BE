@@ -71,13 +71,14 @@ export async function getMyCards(req, res, next) {
       userId,
       page: pageNum,
       pageSize: pageSizeNum,
-      grade,
-      genre,
-      keyword,
+      grade: grade || undefined,
+      genre: genre || undefined,
+      keyword: keyword || undefined,
     });
 
     return res.status(200).json(myCards);
   } catch (error) {
+    console.error(error);
     next(error);
   }
 }

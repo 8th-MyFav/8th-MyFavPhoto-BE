@@ -12,7 +12,7 @@ async function findById(id) {
 // NOTE: 타겟 카드 id로 교환 목록 조회
 async function findByCardId(id) {
   return prisma.tradeHistories.findMany({
-    where: {
+    where: { 
       target_card_id: id,
     },
   });

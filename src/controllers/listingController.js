@@ -59,3 +59,64 @@ export async function removeListing(req, res, next) {
     next(error);
   }
 }
+
+export async function getListingDetail(req, res, next) {
+  try {
+    const { cardId } = +req.params.cardId;
+    const listingDetail = await listingService.getListingDetail(cardId);
+    return res.status(200).json(listingDetail);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getMarketListings(req, res, next) {
+  try {
+    const {
+      take = 15,
+      cursor,
+      grade,
+      genre,
+      isSoldOut,
+      orderBy = "recent",
+      keyword,
+    } = req.query || {};
+
+    const takeNum = +take;
+    if (isNaN(takeNum) || takeNum < 0)
+      throw errors.invalidData("유효하지 않은 take입니다.");
+
+    // +cursor 전 null/undefined 처리
+    let cursorNum;
+    if (cursor != null) {
+      cursorNum = +cursor;
+      // 숫자, 음수 검증
+      if (isNaN(cursorNum) || cursorNum < 0) {
+        throw errors.invalidData("유효하지 않은 cursor입니다.");
+      }
+    }
+
+    if (keyword && keyword.length > 50)
+      throw errors.invalidData("검색어는 최대 50자까지 입력할 수 있습니다.");
+
+    const listings = await listingService.getMarketListings({
+      take: takeNum,
+      cursor: cursorNum,
+      grade,
+      genre,
+      isSoldOut,
+      orderByOption: orderBy,
+      keyword,
+    });
+    return res.status(200).json(listings);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getMyListings(req, res, next) {
+  try {
+  } catch (error) {
+    next(error);
+  }
+}

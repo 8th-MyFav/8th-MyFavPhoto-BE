@@ -144,7 +144,7 @@ async function updateListing(listingData) {
     return {
       tradePostId,
       cardId,
-      ...(targetCount !== null && { targetSaleCount: targetCount }), // 수정 요청한 판매 개수
+      // ...(targetCount !== null && { targetSaleCount: targetCount }), // 수정 요청한 판매 개수
       ...(total_count !== undefined && { total_count }),
       ...(trade_grade && { trade_grade }),
       ...(trade_genre && { trade_genre }),
@@ -180,8 +180,105 @@ async function removeListing(cardId) {
   return removedListing;
 }
 
+async function getListingDetail(cardId) {
+  const listingDetail = await listingRepository.findByCardId({ cardId });
+  return listingDetail;
+}
+
+async function getMarketListings({
+  take = 15,
+  cursor,
+  grade,
+  genre,
+  isSoldOut,
+  keyword,
+  orderByOption = "recent",
+}) {
+  // grade, genre 검증
+  if (grade && !Object.values(Grade).includes(grade))
+    throw errors.invalidQuery("유효하지 않은 등급입니다.");
+  if (genre && !Object.values(Genre).includes(genre))
+    throw errors.invalidQuery("유효하지 않은 장르입니다.");
+
+  // isSoldOut 품절 검증
+  let isSoldOutCheck;
+
+  if (typeof isSoldOut === "string") {
+    const lowerCase = isSoldOut.toLowerCase();
+    if (lowerCase === "true") isSoldOutCheck = true;
+    else if (lowerCase === "false") isSoldOutCheck = false;
+    else throw errors.invalidQuery("유효하지 않은 isSoldOut입니다.");
+  }
+
+  // 필터링 (grade, genre, isSoldOut, keyword)
+  const where = {
+    ...(grade && { grade }),
+    ...(genre && { genre }),
+    ...(isSoldOutCheck !== undefined && {
+      userPhotocards: isSoldOutCheck
+        ? { none: { is_sale: true } } // userPhotocards에 is_sale이 모두 false인 것만 post 남김
+        : { some: { is_sale: true } }, // userPhotocards에 is_sale이 하나라도 true면 post 남김
+    }),
+    ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
+  };
+
+  // 정렬
+  let orderBy = undefined;
+  if (orderByOption === "recent") orderBy = { createdAt: "desc" };
+  if (orderByOption === "price_desc") orderBy = { price: "desc" };
+  if (orderByOption === "price_asc") orderBy = { price: "asc" };
+
+  // tradePosts 테이블 조회
+  const lists = await listingRepository.findAll({
+    where,
+    take,
+    cursor,
+    orderBy,
+  });
+
+  const formattedList = lists.map((post) => {
+    // 판매 중인 카드만 필터링
+    const availableCards = post.UserPhotocards.filter(
+      (userPhotocard) => !userPhotocard.is_sale
+    );
+
+    return {
+      id: post.id,
+      name: post.UserPhotocards[0]?.photocard.name ?? "",
+      nickname: post.UserPhotocards[0]?.photocard.creator.nickname ?? "",
+      grade: post.trade_grade,
+      genre: post.trade_genre,
+      price: post.UserPhotocards[0]?.photocard.price ?? 0,
+      total: post.total_count,
+      available: availableCards.length,
+      image_url: post.UserPhotocards[0]?.photocard.image_url ?? "",
+    };
+  });
+
+  // tradePost 마지막 id와 nextCursor가 같으면 false, 아니면 true
+  const nextCursor = lists.length ? lists[lists.length - 1].id : null;
+  const lastData = await prisma.tradePosts.findFirst({
+    orderBy: { id: "desc" },
+  });
+  const hasMore = lastData?.id === nextCursor ? false : true;
+
+  return {
+    lists: formattedList,
+    nextCursor,
+    hasMore,
+  };
+}
+
+async function getMyListings() {
+  const myListings = listingRepository.findByUserId();
+  return myListings;
+}
+
 export default {
   createListing,
   removeListing,
   updateListing,
+  getListingDetail,
+  getMarketListings,
+  getMyListings,
 };
