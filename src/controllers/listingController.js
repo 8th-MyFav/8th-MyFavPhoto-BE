@@ -63,7 +63,7 @@ export async function removeListing(req, res, next) {
 export async function getListingDetail(req, res, next) {
   try {
     const { cardId } = +req.params.cardId;
-    const listingDetail = await listingService.removeListing(cardId);
+    const listingDetail = await listingService.getListingDetail(cardId);
     return res.status(200).json(listingDetail);
   } catch (error) {
     next(error);

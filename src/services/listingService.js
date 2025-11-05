@@ -238,7 +238,9 @@ async function getMarketListings({
 
   const formattedList = lists.map((post) => {
     // 판매 중인 카드만 필터링
-    const availableCards = post.UserPhotocards.filter((u) => !u.is_sale);
+    const availableCards = post.UserPhotocards.filter(
+      (userPhotocard) => !userPhotocard.is_sale
+    );
 
     return {
       id: post.id,
