@@ -17,7 +17,7 @@ import prisma from "../config/prisma.js";
  * @param {string} cardData.grade - 포토카드 등급 (예: "RARE", "COMMON")
  * @param {string} cardData.genre - 포토카드 장르 (예: "KPOP", "ANIME")
  * @param {number} cardData.price - 카드 판매 가격
- * @param {number} cardData.total_count - 카드 총 개수
+ * @param {number} cardData.total_issued - 카드 총 발행량
  * @param {string} cardData.description - 카드 설명
  * @param {string} cardData.image_url - 카드 이미지 URL
  * @param {number} userId - 현재 로그인한 유저의 ID (owner_id로 사용됨)
@@ -30,7 +30,7 @@ import prisma from "../config/prisma.js";
  *   grade: "RARE",
  *   genre: "KPOP",
  *   price: 10,
- *   total_count: 1,
+ *   total_issued: 1,
  *   description: "카드 설명입니다.",
  *   image_url: "https://example.com/card.jpg"
  * }, 1);
@@ -47,7 +47,7 @@ async function create(userId, cardData) {
         grade: cardData.grade,
         genre: cardData.genre,
         price: cardData.price,
-        total_count: cardData.total_count,
+        total_issued: cardData.total_issued,
         description: cardData.description,
         image_url: cardData.image_url,
       },
@@ -55,7 +55,7 @@ async function create(userId, cardData) {
 
     // NOTE: UserPhotocards 테이블에 데이터 추가
     const userPhotocards = await Promise.all(
-      Array.from({ length: cardData.total_count }).map(() =>
+      Array.from({ length: cardData.total_issued }).map(() =>
         tx.UserPhotocards.create({
           data: {
             owner_id: userId,
@@ -131,7 +131,7 @@ async function findByUserId({ userId, page, pageSize, grade, genre, keyword }) {
       grade: true,
       genre: true,
       price: true,
-      total_count: true,
+      total_issued: true,
       image_url: true,
       createdAt: true,
       updatedAt: true,
