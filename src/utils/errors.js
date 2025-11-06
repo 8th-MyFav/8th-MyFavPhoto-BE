@@ -128,6 +128,11 @@ export function alreadyReadNotification(message = "이미 읽은 알림입니다
 export function cannotBuyOwnCard(message = "자신이 등록한 카드는 구매할 수 없습니다.") {
   return createError(409, "CANNOT_BUY_OWN_CARD", message);
 }
+
+// 판매 중 카드는 제안 불가
+export function cannotOfferOnSaleCard(message = "현재 판매 중인 카드는 제안할 수 없습니다.") {
+  return createError(409, "CANNOT_OFFER_ON_SALE_CARD", message);
+}
 /* ===========================
    🚦 413 / 429 / 5xx 계열
 =========================== */

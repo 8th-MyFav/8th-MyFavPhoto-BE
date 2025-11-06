@@ -28,6 +28,16 @@ async function findSellingCardById(photocards_id) {
   });
 }
 
+// NOTE: photocards id로 판매 중이 아닌 카드가 몇개인지?(재고가 있는지?)
+export async function countUnsoldPhotocards(photocards_id) {
+  return await prisma.userPhotocards.count({
+    where: {
+      photocards_id,
+      is_sale: false,
+    },
+  });
+}
+
 // NOTE: owner 변경
 async function changeOwner(tx = prisma, id, owner_id) {
   return tx.userPhotocards.update({
@@ -51,6 +61,7 @@ export default {
   findById,
   findFirstByCardId,
   findSellingCardById,
+  countUnsoldPhotocards,
   changeOwner,
   findFirstByTradePostId,
 };
