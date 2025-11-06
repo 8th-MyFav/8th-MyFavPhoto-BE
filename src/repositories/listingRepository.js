@@ -145,6 +145,7 @@ async function deleteTradePost({ tx = prisma, tradePostId }) {
 }
 
 /* get market listings */
+
 async function findAll({ where, take, cursor, orderBy }) {
   return prisma.tradePosts.findMany({
     where,
@@ -164,7 +165,6 @@ async function findAll({ where, take, cursor, orderBy }) {
               name: true,
               grade: true,
               genre: true,
-              price: true,
               image_url: true,
               creator: { select: { nickname: true } }, // user join
             },

@@ -18,20 +18,19 @@ import {
 const marketRouter = express.Router();
 
 marketRouter.use("/trades", authMiddleware.verifyAccessToken);
+
 // NOTE: 교환 제안 생성 api
 marketRouter.post(
-  "/trades/:cardId",
+  "/trades",
   authMiddleware.verifyOfferedCardAuth,
-  getOfferedTradesHistory
+  authMiddleware.verifyTradePostCardAuth,
+  proposeTrade
 );
-
-// NOTE: 교환 api
-marketRouter.post("/trades/:cardId", proposeTrade);
 
 // NOTE: 교환 제시 목록 조회 api
 marketRouter.get(
   "/trades/:cardId",
-  authMiddleware.verifyBodyCardAuth,
+  authMiddleware.verifyParamsCardAuth,
   getOfferedTradesHistory
 );
 // NOTE: 교환 제시 승인
@@ -81,6 +80,6 @@ listingRouter
 listingRouter.route("/:postId").get(getListingDetail);
 
 // NOTE: /market/listings/me
-listingRouter.route("/me").get(authMiddleware.verifyAccessToken, getMyListings);
+listingRouter.route("/me").get(getMyListings);
 
 export default marketRouter;

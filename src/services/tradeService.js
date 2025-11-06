@@ -1,21 +1,27 @@
 import prisma from "../config/prisma.js";
 import authRepository from "../repositories/authRepository.js";
 import cardRepository from "../repositories/cardRepository.js";
+import listingRepository from "../repositories/listingRepository.js";
 import notificationRepository from "../repositories/notificationRepository.js";
 import tradeRepository from "../repositories/tradeRepository.js";
 import userCardRepository from "../repositories/userCardRepository.js";
 import * as errors from "../utils/errors.js";
 
 // NOTE: 교환 제안 생성
-async function createTrade(userId, targetCardId, offeredCardId, content) {
+async function createTrade(userId, tradePostId, offeredCardId, content) {
   try {
     // 교환 요청자 정보
     const requester = await authRepository.findById(userId);
 
-    // 타겟 포토카드 정보
+    // 타겟 포토카드 하나만 가져오기
+    const targetPhotocard = await userCardRepository.findFirstByTradePostId(
+      tradePostId
+    );
+    if (!targetPhotocard)
+      throw errors.cardNotFound("교환할 카드가 존재하지 않습니다.");
+
+    const targetCardId = targetPhotocard.photocards_id;
     const photocardInfo = await cardRepository.findByCardId(targetCardId);
-    if (!photocardInfo)
-      throw errors.cardNotFound("타겟카드가 존재하지 않습니다.");
 
     // 알림 내용
     const notifContent = `${requester.nickname}님이 [${photocardInfo.grade}|${photocardInfo.name}]의 포토카드 교환을 제안했습니다.`;
@@ -54,10 +60,10 @@ async function createTrade(userId, targetCardId, offeredCardId, content) {
 // NOTE: 교환 제안 목록 조회
 async function getTradesHistory(cardId) {
   try {
-    // 카드 존재 확인
+    // 교환 제안 존재 확인
     const tradeHistories = await tradeRepository.findByCardId(cardId);
 
-    if (!tradeHistories) {
+    if (tradeHistories.length === 0) {
       throw errors.tradeNotFound("제안 내역이 없습니다.");
     }
 
@@ -71,11 +77,11 @@ async function getTradesHistory(cardId) {
   }
 }
 
-// NOTE: 교환 제안 승인
+// NOTE: 교환 제안 승인 <- userPhotocards가 아니라 photocards id로 들어오는걸로 변경
 async function patchTradeApprove(tradeId, userId) {
   try {
     const tradeHistory = await tradeRepository.findById(tradeId);
-
+    // 타켓 카드 정보
     const photocardInfo = await cardRepository.findByCardId(
       tradeHistory.target_card_id
     );
@@ -94,6 +100,12 @@ async function patchTradeApprove(tradeId, userId) {
     const targetNotifContent = `${targetCardOwnerNickname}님과의 [${photocardInfo.grade}|${photocardInfo.name}]의 포토카드 교환이 성사되었습니다.`;
     const offerNotifContent = `${offeredCardOwnerNickname}님과의 [${photocardInfo.grade}|${photocardInfo.name}]의 포토카드 교환이 성사되었습니다.`;
 
+    // 각각 실제 교환할 카드
+    const targetCard = await userCardRepository.findSellingCardById(tradeHistory.target_card_id);
+    const offeredCard = await userCardRepository.findFirstByCardId(
+      tradeHistory.offered_card_id
+    );
+
     // tradehistory 승인 + 교환 승인 알림 각각 생성
     const result = await prisma.$transaction(async (tx) => {
       // 교환 상태 승인으로 변경
@@ -106,13 +118,13 @@ async function patchTradeApprove(tradeId, userId) {
       // target card 소유자 변경
       const changeTarget = await userCardRepository.changeOwner(
         tx,
-        tradeHistory.target_card_id,
+        targetCard.id,
         offeredCardOwner
       );
       // offered card 소유자 변경
       const changeOffered = await userCardRepository.changeOwner(
         tx,
-        tradeHistory.offered_card_id,
+        offeredCard.id,
         targetCardOwner
       );
 
@@ -135,6 +147,7 @@ async function patchTradeApprove(tradeId, userId) {
 
     return result;
   } catch (error) {
+    console.log(error);
     throw errors.internalServerError();
   }
 }
