@@ -43,8 +43,11 @@ model Photocards {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  creator        User             @relation(fields: [creator_id], references: [id])
-  userPhotocards UserPhotocards[]
+  creator               User                @relation(fields: [creator_id], references: [id])
+  userPhotocards        UserPhotocards[]
+  OfferedTradeHistories TradeHistories[]    @relation("OfferedTrades")
+  TargetTradeHistories  TradeHistories[]    @relation("TargetTrades")
+  PurchaseHistories     PurchaseHistories[]
 }
 
 enum Grade {
@@ -74,10 +77,6 @@ model UserPhotocards {
   owner     User        @relation(fields: [owner_id], references: [id])
   photocard Photocards  @relation(fields: [photocards_id], references: [id])
   tradePost TradePosts? @relation(fields: [trade_info_id], references: [id])
-
-  PurchaseHistories PurchaseHistories[]
-  OfferedHistories  TradeHistories[]    @relation("OfferedTrades")
-  TargetHistories   TradeHistories[]    @relation("TargetTrades")
 }
 
 model TradePosts {
@@ -104,9 +103,9 @@ model TradeHistories {
   updatedAt       DateTime    @updatedAt
 
   // FK 관계 명시
-  requester   User           @relation(fields: [requester_id], references: [id])
-  offeredCard UserPhotocards @relation("OfferedTrades", fields: [offered_card_id], references: [id]) // 내 카드
-  targetCard  UserPhotocards @relation("TargetTrades", fields: [target_card_id], references: [id]) // 교환 타겟 카드
+  requester   User       @relation(fields: [requester_id], references: [id])
+  offeredCard Photocards @relation("OfferedTrades", fields: [offered_card_id], references: [id]) // 내 카드
+  targetCard  Photocards @relation("TargetTrades", fields: [target_card_id], references: [id]) // 교환 타겟 카드
 }
 
 enum TradeStatus {
@@ -122,8 +121,8 @@ model PurchaseHistories {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  purchaser    User           @relation(fields: [purchaser_id], references: [id])
-  purchaseCard UserPhotocards @relation(fields: [purchase_card_id], references: [id])
+  purchaser    User       @relation(fields: [purchaser_id], references: [id])
+  purchaseCard Photocards @relation(fields: [purchase_card_id], references: [id])
 }
 
 model Notifications {
