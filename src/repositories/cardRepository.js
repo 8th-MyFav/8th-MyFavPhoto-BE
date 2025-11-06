@@ -103,7 +103,7 @@ async function findByUserId({
   keyword,
 }) {
   // 필터 추가
-  const baseWhere = { owner_id: userId, is_sale: true };
+  const baseWhere = { owner_id: userId };
   const filteredWhere = {
     ...baseWhere,
     ...(grade && { grade }),
@@ -113,13 +113,6 @@ async function findByUserId({
 
   // 전체 개수
   const totalCount = await prisma.userPhotocards.count({ where: baseWhere });
-
-  // 등급별 개수
-  const groupGrades = await prisma.userPhotocards.groupBy({
-    by: ["photocard_grade"], // photocard.grade를 alias로 표현
-    where: baseWhere,
-    _count: { _all: true }, // 그룹별 데이터 개수
-  });
 
   // 등급 기본값 초기화 (groupBy 관계 필드 지원XX) -> join 수행, 각 userPC별 등급 접근 -> count
   const gradeCounts = Object.fromEntries(
@@ -131,10 +124,7 @@ async function findByUserId({
     where: baseWhere,
     select: { photocard: { select: { grade: true } } },
   });
-  gradeData.forEach(
-    ({ photocards_grade, _count }) =>
-      (gradeCounts[photocards_grade] = _count._all)
-  );
+  gradeData.forEach(({ photocard }) => (gradeCounts[photocard.grade] += 1));
 
   const lists = await prisma.userPhotocards.findMany({
     where: filteredWhere,

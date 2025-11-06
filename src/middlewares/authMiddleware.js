@@ -30,7 +30,7 @@ async function verifyBodyCardAuth(req, res, next) {
     // 카드 id 유효성 검사
     if (!cardId || isNaN(cardId))
       throw errors.badRequest("유효한 카드 ID가 아닙니다.");
-    
+
     // 카드 존재 여부 조회
     const userCard = await cardRepository.findByCardId(Number(cardId));
     if (!userCard) throw errors.notFound("존재하지 않는 카드입니다.");
@@ -48,17 +48,15 @@ async function verifyBodyCardAuth(req, res, next) {
 // params로 들어온 카드가 현재 유저 카드인지 확인 -> 판매 수정하기, 판매 내리기 등
 async function verifyParamsCardAuth(req, res, next) {
   const { userId } = req.auth;
-  const { cardId } = req.params;
+  const cardId = Number(req.params.cardId);
   try {
-    // 일단 카드 id로 photocards id 구하기
-    const userCard = await userCardRepository.findById(Number(cardId));
+    // 카드 id로 photocards 구하기
+    const photocard = await cardRepository.findByCardId(cardId);
 
-    if (!userCard) throw errors.cardNotFound("카드가 없습니다.");
-    // -> photocards id로 creator id 구하기
-    const cardInfo = await cardRepository.findByCardId(userCard.photocards_id);
+    if (!photocard) throw errors.cardNotFound("카드가 없습니다.");
 
     // 카드 creator랑 현재 auth 가 동일한지 확인
-    if (cardInfo.creator_id !== userId)
+    if (photocard.creator_id !== userId)
       throw errors.forbidden("해당 카드의 생성자가 아닙니다.");
 
     next();
@@ -71,16 +69,18 @@ async function verifyParamsCardAuth(req, res, next) {
 // body로 들어온 offered Card가 현재 유저 카드인지 확인 -> trade 제안에만 사용?
 async function verifyOfferedCardAuth(req, res, next) {
   const { userId } = req.auth;
-  const { offeredCardId: cardId } = req.body;
+  const cardId = Number(req.body.offeredCardId);
   try {
-    // 일단 카드 id로 카드 정보에서 creator id 가져오기
-    const userCard = await userCardRepository.findById(Number(cardId));
-    if (!userCard) throw errors.cardNotFound();
+    // 카드 id 유효성 검사
+    if (!cardId || isNaN(cardId))
+      throw errors.badRequest("유효한 카드 ID가 아닙니다.");
 
-    const cardInfo = await cardRepository.findByCardId(userCard.photocards_id);
+    // 카드 id로 카드 정보에서 creator id 가져오기
+    const photocard = await cardRepository.findByCardId(cardId);
+    if (!photocard) throw errors.cardNotFound();
 
     // 카드 creator랑 현재 auth 가 동일한지 확인
-    if (cardInfo.creator_id !== userId)
+    if (photocard.creator_id !== userId)
       throw errors.forbidden("제안한 카드의 생성자가 아닙니다.");
 
     next();
@@ -99,10 +99,10 @@ async function verifyTradeAuth(req, res, next) {
     if (!tradeHistory) throw errors.tradeNotFound("교환 제안이 없습니다.");
 
     // 카드 소유자와 현재 유저 확인
-    const userCard = await userCardRepository.findById(
+    const cardInfo = await cardRepository.findByCardId(
       tradeHistory.target_card_id
     );
-    if (userCard.owner_id !== Number(userId)) throw errors.forbidden();
+    if (cardInfo.creator_id !== Number(userId)) throw errors.forbidden();
 
     next();
   } catch (error) {
@@ -128,6 +128,23 @@ async function verifyNotifAuth(req, res, next) {
   }
 }
 
+// NOTE: 교환하거나 구매하는 카드가 내 카드인가? tradePosts Id로 검증
+async function verifyTradePostCardAuth(req, res, next) {
+  const { userId } = req.auth;
+  const tradePostId = Number(req.body.tradePostId);
+  try {
+    // postId 중에 현재 판매 중인 카드 1장
+    const card = await userCardRepository.findFirstByTradePostId(tradePostId);
+    if (!card) throw errors.cardAlreadySold();
+
+    if (card.owner_id === Number(userId)) throw errors.cannotBuyOwnCard();
+
+    next();
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export default {
   verifyAccessToken,
   verifyRefreshToken,
@@ -136,4 +153,5 @@ export default {
   verifyOfferedCardAuth,
   verifyTradeAuth,
   verifyNotifAuth,
+  verifyTradePostCardAuth,
 };

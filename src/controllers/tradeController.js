@@ -7,16 +7,16 @@ export async function proposeTrade(req, res, next) {
   try {
     const { userId } = req.auth;
     const { content } = req.body;
-    const targetCardId = Number(req.params.cardId);
+    const tradePostId = Number(req.body.tradePostId);
     const offeredCardId = Number(req.body.offeredCardId);
 
     // query, body 유효성 검사
-    if (!Number.isInteger(targetCardId) || !Number.isInteger(offeredCardId))
+    if (!Number.isInteger(tradePostId) || !Number.isInteger(offeredCardId))
       throw errors.invalidQuery();
 
     const trades = await tradeService.createTrade(
       Number(userId),
-      targetCardId,
+      tradePostId,
       offeredCardId,
       content
     );
