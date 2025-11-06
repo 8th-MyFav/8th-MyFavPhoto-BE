@@ -1,4 +1,5 @@
 import prisma from "../config/prisma.js";
+import tradeRepository from "../repositories/tradeRepository.js";
 import userCardRepository from "../repositories/userCardRepository.js";
 import * as errors from "../utils/errors.js";
 
@@ -18,13 +19,24 @@ async function isEntityExist(id, modelName) {
 async function isCardInStock(photocardId) {
   const count = await userCardRepository.countUnsoldPhotocards(photocardId);
 
-  console.log("count: ", count);
   if (count === 0) {
     throw errors.cannotOfferOnSaleCard();
   }
 }
 
+// NOTE: 동일한 카드의 제안 생성 금지
+async function validatePropose(offeredCardId, targetCardId) {
+  const existTradeHistory = await tradeRepository.existsDuplicateTradeCards(
+    offeredCardId,
+    targetCardId
+  );
+
+  if (existTradeHistory)
+    throw errors.invalidTradeStatus("이미 존재하는 교환입니다.");
+}
+
 export default {
   isEntityExist,
   isCardInStock,
+  validatePropose,
 };

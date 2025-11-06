@@ -78,9 +78,23 @@ async function updateStatus(tx, id, trade_status) {
   });
 }
 
+// NOTE: 동일한 내용의 교환 제안 생성이 있는지
+export async function existsDuplicateTradeCards(offeredCardId, targetCardId) {
+  const exists = await prisma.tradeHistories.findFirst({
+    where: {
+      offered_card_id: offeredCardId,
+      target_card_id: targetCardId,
+    },
+    select: { id: true }, // 최소 데이터만 가져와서 빠름
+  });
+
+  return !!exists; // 존재하면 true, 없으면 false
+}
+
 export default {
   findById,
   findByCardId,
   create,
   updateStatus,
+  existsDuplicateTradeCards,
 };

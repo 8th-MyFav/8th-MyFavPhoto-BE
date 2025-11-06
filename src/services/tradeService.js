@@ -22,8 +22,10 @@ async function createTrade(userId, tradePostId, offeredCardId, content) {
 
     // 제안된 카드가 재고가 남았는지 확인
     await validate.isCardInStock(offeredCardId);
-
+    
     const targetCardId = targetPhotocard.photocards_id;
+    // 동일한 교환 제안이 있는지 확인
+    await validate.validatePropose(offeredCardId, targetCardId);
     const photocardInfo = await cardRepository.findByCardId(targetCardId);
 
     // 알림 내용
