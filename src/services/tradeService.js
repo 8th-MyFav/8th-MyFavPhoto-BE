@@ -21,8 +21,12 @@ async function createTrade(userId, tradePostId, offeredCardId, content) {
       throw errors.cardNotFound("교환할 카드가 존재하지 않습니다.");
 
     // 제안된 카드가 재고가 남았는지 확인
-    await validate.isCardInStock(offeredCardId);
-    
+    await validate.isCardInStock(
+      offeredCardId,
+      userId,
+      "현재 판매 중인 카드는 제안할 수 없습니다."
+    );
+
     const targetCardId = targetPhotocard.photocards_id;
     // 동일한 교환 제안이 있는지 확인
     await validate.validatePropose(offeredCardId, targetCardId);
@@ -86,6 +90,13 @@ async function getTradesHistory(cardId) {
 async function patchTradeApprove(tradeId, userId) {
   try {
     const tradeHistory = await tradeRepository.findById(tradeId);
+
+    // 교환 제안이 없는 경우
+    if (!tradeHistory) throw errors.tradeNotFound();
+    // 교환 제안이 이미 처리된 경우
+    if (tradeHistory.trade_status !== "PENDING")
+      throw errors.invalidTradeStatus();
+
     // 타켓 카드 정보
     const photocardInfo = await cardRepository.findByCardId(
       tradeHistory.target_card_id
@@ -105,13 +116,21 @@ async function patchTradeApprove(tradeId, userId) {
     const targetNotifContent = `${targetCardOwnerNickname}님과의 [${photocardInfo.grade}|${photocardInfo.name}]의 포토카드 교환이 성사되었습니다.`;
     const offerNotifContent = `${offeredCardOwnerNickname}님과의 [${photocardInfo.grade}|${photocardInfo.name}]의 포토카드 교환이 성사되었습니다.`;
 
-    // 각각 실제 교환할 카드
+    // 각각 실제 교환할 카드 owner id 확인할것
     const targetCard = await userCardRepository.findSellingCardById(
-      tradeHistory.target_card_id
+      tradeHistory.target_card_id,
+      targetCardOwner
     );
+    // target 카드의 재고가 남아있는지
+    if (!targetCard) throw errors.cannotOnSaleCard("카드의 재고가 없습니다.");
+
     const offeredCard = await userCardRepository.findFirstByCardId(
-      tradeHistory.offered_card_id
+      tradeHistory.offered_card_id,
+      offeredCardOwner
     );
+    // offered 카드의 재고가 남아있는지
+    if (!offeredCard)
+      throw errors.cannotOnSaleCard("제안된 카드의 재고가 없습니다.");
 
     // tradehistory 승인 + 교환 승인 알림 각각 생성
     const result = await prisma.$transaction(async (tx) => {
@@ -155,6 +174,9 @@ async function patchTradeApprove(tradeId, userId) {
     return result;
   } catch (error) {
     console.log(error);
+    if (error.code !== 500) {
+      throw error;
+    }
     throw errors.internalServerError();
   }
 }

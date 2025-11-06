@@ -19,20 +19,22 @@ async function findFirstByCardId(photocards_id) {
 }
 
 // NOTE: photocard id로 userPhotocards하나만 반환 - 판매 중 card용
-async function findSellingCardById(photocards_id) {
+async function findSellingCardById(photocards_id, owner_id) {
   return await prisma.userPhotocards.findFirst({
     where: {
       photocards_id,
+      owner_id,
       is_sale: true,
     },
   });
 }
 
-// NOTE: photocards id로 판매 중이 아닌 카드가 몇개인지?(재고가 있는지?)
-export async function countUnsoldPhotocards(photocards_id) {
-  return await prisma.userPhotocards.count({
+// NOTE: photocards id로 판매 중이 아닌 카드가 하나.(재고가 있는지?)
+export async function findUnsoldPhotocards(photocards_id, owner_id) {
+  return await prisma.userPhotocards.findFirst({
     where: {
       photocards_id,
+      owner_id,
       is_sale: false,
     },
   });
@@ -61,7 +63,7 @@ export default {
   findById,
   findFirstByCardId,
   findSellingCardById,
-  countUnsoldPhotocards,
+  findUnsoldPhotocards,
   changeOwner,
   findFirstByTradePostId,
 };

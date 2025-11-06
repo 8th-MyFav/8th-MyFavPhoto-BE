@@ -132,8 +132,8 @@ export function cannotBuyOwnCard(
 }
 
 // 판매 중 카드는 제안 불가
-export function cannotOfferOnSaleCard(
-  message = "현재 판매 중인 카드는 제안할 수 없습니다."
+export function cannotOnSaleCard(
+  message = "카드의 재고가 없습니다."
 ) {
   return createError(409, "CANNOT_OFFER_ON_SALE_CARD", message);
 }

@@ -15,12 +15,19 @@ async function isEntityExist(id, modelName) {
   if (!record) throw errors.notFound(modelName);
 }
 
-// NOTE: "카드 목록"에 판매 중이 아닌 카드가 있는지 확인하는 함수, 재고가 남아있는가
-async function isCardInStock(photocardId) {
-  const count = await userCardRepository.countUnsoldPhotocards(photocardId);
+// NOTE: 내 "카드 목록"에 판매 중이 아닌 카드가 있는지 확인하는 함수, is_sale: false가 있는가?
+async function isCardInStock(
+  photocardId,
+  ownerId,
+  msg = "카드의 재고가 없습니다."
+) {
+  const card = await userCardRepository.findUnsoldPhotocards(
+    photocardId,
+    ownerId
+  );
 
-  if (count === 0) {
-    throw errors.cannotOfferOnSaleCard();
+  if (!card) {
+    throw errors.cannotOnSaleCard(msg);
   }
 }
 
