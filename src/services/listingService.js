@@ -314,8 +314,68 @@ async function getMarketListings({
   };
 }
 
-async function getMyListings() {
-  const myListings = listingRepository.findByUserId();
+async function getMyListings({
+  userId,
+  page,
+  pageSize,
+  grade,
+  genre,
+  keyword,
+  saleType,
+  isSoldOut,
+}) {
+  // grade, genre 검증
+  if (grade && !Object.values(Grade).includes(grade))
+    throw errors.invalidQuery("유효하지 않은 등급입니다.");
+  if (genre && !Object.values(Genre).includes(genre))
+    throw errors.invalidQuery("유효하지 않은 장르입니다.");
+
+  // isSoldOut 품절 검증 (string 입력값일 때)
+  let isSoldOutCheck;
+  if (typeof isSoldOut === "string") {
+    const lowerCase = isSoldOut.toLowerCase();
+    if (lowerCase === "true") isSoldOutCheck = true;
+    else if (lowerCase === "false") isSoldOutCheck = false;
+    else throw errors.invalidQuery("유효하지 않은 isSoldOut입니다.");
+  }
+  // keyword 검증 (controller에서 했는데 service level에서도 할게 있나?)
+
+  // saleType 검증
+  if (saleType && saleType !== "sell" && saleType !== "trade")
+    throw errors.invalidQuery("유효하지 않은 saleType입니다.");
+
+  const where = {
+    ...(grade && { grade }),
+    ...(genre && { genre }),
+    ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
+    // ...(isSoldOutCheck !== undefined && {
+    //   userPhotocards: isSoldOutCheck
+    //     ? { none: { is_sale: true } } // userPhotocards에 is_sale이 모두 false인 것만 post 남김
+    //     : { some: { is_sale: true } }, // userPhotocards에 is_sale이 하나라도 true면 post 남김
+    // }),
+  };
+  /*
+  0. 모든 내 카드 (교환제시+판매올림, (품절 상관 없이)) 
+  - photocards 테이블에서 where [ creator_id: userId ] 
+  - + 교환제시(tradeHistories 테이블에서 where [ requester_id: userId ]) 
+  - + 판매올림(tradePost 테이블에서 where [ trade_info_id ] 
+  - 판매 올리지도 않았고 교환 제시하지 않은 카드만 제외되어야하는데.)
+  1.1. 교환 제시한 카드 
+  - requester_id: userId
+  1.2. 판매 올린 카드 
+  - trade_info_id: { not: null } 
+  2.1. 품절 
+  - 모든 내 카드에 is_sale: false or creator_id: userId인데 owner_id가 userId가 아닌 것
+  2.2. 판매중 
+  - trade_info_id: { not: null }, is_sale: true
+  */
+ prisma.테이블명 
+  const myListings = listingRepository.findUserPhotocardsByUserId({
+    userId,
+    where,
+    page,
+    pageSize,
+  });
   return myListings;
 }
 
@@ -327,3 +387,12 @@ export default {
   getMarketListings,
   getMyListings,
 };
+
+// sell: 내가 판매 올린 카드들
+// - userPhotocards에 tradePosts연결되어 있을 때
+// trade: 내가 교환 제시한 카드들
+// - tradeHistories에 where: requester_id가 userId와 같을 때,
+// - select offered_card_id 배열로 get(이 카드로 여러 교환 제시했을 때, 그 중 하나만 보여주면 됨)
+// - 해당 ids를 userPhotocards에 where:
+// soldOut: 품절여부
+// - photocards where creator_id: userId, select userPhotocards where is_sale false trade_info_id

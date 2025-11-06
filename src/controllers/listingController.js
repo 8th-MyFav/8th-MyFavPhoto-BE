@@ -120,6 +120,38 @@ export async function getMarketListings(req, res, next) {
 
 export async function getMyListings(req, res, next) {
   try {
+    const { userId } = req.auth;
+    const {
+      page = 1,
+      pageSize = 15,
+      grade,
+      genre,
+      saleType,
+      isSoldOut,
+      keyword,
+    } = req.query || {};
+    const pageNum = +page;
+    const pageSizeNum = +pageSize;
+
+    if (isNaN(pageNum) || pageNum < 1)
+      throw errors.invalidQuery("유효하지 않은 page입니다.");
+    if (isNaN(pageSizeNum) || pageSizeNum < 0 || pageSizeNum > 50)
+      throw errors.invalidQuery("유효하지 않은 pageSize입니다.");
+    if (keyword && keyword.length > 50)
+      throw errors.invalidQuery("검색어는 최대 50자까지 입력 가능합니다.");
+
+    const myListings = await listingService.getMyListings({
+      userId,
+      page: pageNum,
+      pageSize: pageSizeNum,
+      grade: grade || undefined,
+      genre: genre || undefined,
+      keyword: keyword || undefined,
+      saleType: saleType.toLowerCase() || undefined,
+      isSoldOut: isSoldOut || undefined,
+    });
+
+    return res.status(200).json(myListings);
   } catch (error) {
     next(error);
   }

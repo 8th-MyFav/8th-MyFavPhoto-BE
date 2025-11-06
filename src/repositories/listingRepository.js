@@ -210,6 +210,12 @@ async function countSoldByPostId({ tx = prisma, postId }) {
   });
 }
 
+async function findUserPhotocardsByUserId({ tx = prisma, userId }) {
+  return tx.userPhotocards.findMany({
+    where,
+  });
+}
+
 export default {
   findByCardId,
   findAvailable,
@@ -228,4 +234,5 @@ export default {
   findAndLockTradePostById,
   findByPostId,
   countSoldByPostId,
+  findUserPhotocardsByUserId,
 };
