@@ -210,9 +210,28 @@ async function countSoldByPostId({ tx = prisma, postId }) {
   });
 }
 
-async function findUserPhotocardsByUserId({ tx = prisma, userId }) {
+async function findUserPhotocardsByUserId({
+  tx = prisma,
+  where,
+  page,
+  pageSize,
+}) {
+  console.log(`where: ${where}, page: ${page}, pageSize: ${pageSize}`);
   return tx.userPhotocards.findMany({
     where,
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+    include: {
+      photocard: true
+    },
+  });
+}
+
+// NOTE: 새로 만든 DB접근함수!! requester_id로 TradeHistories 조회하여 offered_card_id 배열 반환
+async function findTradeHistoriesByRequesterId({ tx = prisma, requester_id }) {
+  return tx.tradeHistories.findMany({
+    where: { requester_id, trade_status: "PENDING" },
+    select: { offered_card_id: true },
   });
 }
 
@@ -234,5 +253,6 @@ export default {
   findAndLockTradePostById,
   findByPostId,
   countSoldByPostId,
+  findTradeHistoriesByRequesterId,
   findUserPhotocardsByUserId,
 };

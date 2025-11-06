@@ -108,7 +108,7 @@ export async function getMarketListings(req, res, next) {
       cursor: cursorNum,
       grade,
       genre,
-      isSoldOut,
+      isSoldOut: isSoldOutCheck,
       orderByOption: orderBy,
       keyword,
     });
@@ -140,17 +140,29 @@ export async function getMyListings(req, res, next) {
     if (keyword && keyword.length > 50)
       throw errors.invalidQuery("검색어는 최대 50자까지 입력 가능합니다.");
 
+    // isSoldOut 품절 검증 (string 입력값일 때) & 매핑
+    const isSoldOutCheck =
+      isSoldOut == null
+        ? undefined
+        : ["true", "1", true, 1].includes(isSoldOut)
+        ? true
+        : ["false", "0", false, 0].includes(isSoldOut)
+        ? false
+        : (() => {
+            throw errors.invalidQuery("유효하지 않은 isSoldOut입니다.");
+          })();
+
     const myListings = await listingService.getMyListings({
       userId,
       page: pageNum,
       pageSize: pageSizeNum,
-      grade: grade || undefined,
-      genre: genre || undefined,
-      keyword: keyword || undefined,
-      saleType: saleType.toLowerCase() || undefined,
-      isSoldOut: isSoldOut || undefined,
+      grade: grade ?? undefined,
+      genre: genre ?? undefined,
+      keyword: keyword ?? undefined,
+      saleType: saleType?.toLowerCase() ?? undefined,
+      isSoldOut: isSoldOutCheck ?? undefined,
     });
-
+    console.log(myListings);
     return res.status(200).json(myListings);
   } catch (error) {
     next(error);

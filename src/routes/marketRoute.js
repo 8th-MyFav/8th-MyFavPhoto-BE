@@ -76,10 +76,10 @@ listingRouter
     removeListing
   );
 
-// NOTE: /market/listings/:postId
-listingRouter.route("/:postId").get(getListingDetail);
-
-// NOTE: /market/listings/me
-listingRouter.route("/me").get(authMiddleware.verifyAccessToken, getMyListings);
-
+  // NOTE: /market/listings/me
+  listingRouter.route("/me").get(authMiddleware.verifyAccessToken, getMyListings);
+  
+  // NOTE: /market/listings/:postId
+  listingRouter.route("/:postId").get(getListingDetail);
+  
 export default marketRouter;
