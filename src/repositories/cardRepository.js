@@ -106,9 +106,11 @@ async function findByUserId({
   const baseWhere = { owner_id: userId };
   const filteredWhere = {
     ...baseWhere,
-    ...(grade && { grade }),
-    ...(genre && { genre }),
-    ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
+    ...(grade && { photocard: { grade } }),
+    ...(genre && { photocard: { genre } }),
+    ...(keyword && {
+      photocard: { name: { contains: keyword, mode: "insensitive" } },
+    }),
   };
 
   // 전체 개수
