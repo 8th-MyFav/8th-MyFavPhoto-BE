@@ -216,7 +216,6 @@ async function findUserPhotocardsByUserId({
   page,
   pageSize,
 }) {
-  console.log(`where: ${where}, page: ${page}, pageSize: ${pageSize}`);
   return tx.userPhotocards.findMany({
     where,
     skip: (page - 1) * pageSize,

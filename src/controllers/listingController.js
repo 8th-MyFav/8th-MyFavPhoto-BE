@@ -162,7 +162,6 @@ export async function getMyListings(req, res, next) {
       saleType: saleType?.toLowerCase() ?? undefined,
       isSoldOut: isSoldOutCheck ?? undefined,
     });
-    console.log(myListings);
     return res.status(200).json(myListings);
   } catch (error) {
     next(error);

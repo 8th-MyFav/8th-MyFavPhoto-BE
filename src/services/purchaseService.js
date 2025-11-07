@@ -94,7 +94,6 @@ async function purchaseCard({ userId, tradePostId, count }) {
       where: { id: { in: availableCardsIds }, is_sale: true }, // 불필요한 is_sale 트랜잭션 롤백을 위해 is_sale: true 추가
       data: { owner_id: userId, is_sale: false },
     });
-    console.log("updated: ", updated);
 
     // 3. 품절 검증 (DB 업데이트 직전)
     // 타 유저가 내게 배당됐던 특정 id의 데이터를 바꾸면 '누구'가 다시 최신 상태의 DB에서 id 조회 (findMany부터 다시)
