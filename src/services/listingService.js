@@ -279,6 +279,10 @@ async function getMarketListings({
   });
 
   const formattedList = lists.map((post) => {
+    // post에 연결된 userPhotocards가 없을 때
+    if (post.UserPhotocards && post.UserPhotocards.length === 0) {
+      throw errors.notFound(`포스트 ${post.id}`);
+    }
     // 판매 중인 카드만 필터링
     const availableCards = post.UserPhotocards.filter(
       (userPhotocard) => !userPhotocard.is_sale
@@ -289,8 +293,8 @@ async function getMarketListings({
       id: post.id,
       name: firstCard.name ?? "",
       nickname: firstCard.creator.nickname ?? "",
-      grade: firstCard.trade_grade,
-      genre: firstCard.trade_genre,
+      grade: firstCard.grade,
+      genre: firstCard.genre,
       price: post.price ?? 0,
       total: post.total_count,
       available: availableCards.length,
