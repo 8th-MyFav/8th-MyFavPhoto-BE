@@ -22,6 +22,7 @@ async function isCardInStock(
   msg = "카드의 재고가 없습니다."
 ) {
   const card = await userCardRepository.findUnsoldPhotocards(
+    undefined,
     photocardId,
     ownerId
   );
@@ -34,6 +35,7 @@ async function isCardInStock(
 // NOTE: 동일한 카드의 제안 생성 금지
 async function validatePropose(offeredCardId, targetCardId) {
   const existTradeHistory = await tradeRepository.existsDuplicateTradeCards(
+    undefined,
     offeredCardId,
     targetCardId
   );
