@@ -1,4 +1,5 @@
 import cardService from "../services/cardService.js";
+import * as errors from "../utils/errors.js";
 
 /**
  * 카드 생성 컨트롤러
