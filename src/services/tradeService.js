@@ -1,11 +1,11 @@
 import prisma from "../config/prisma.js";
 import authRepository from "../repositories/authRepository.js";
 import cardRepository from "../repositories/cardRepository.js";
-import listingRepository from "../repositories/listingRepository.js";
 import notificationRepository from "../repositories/notificationRepository.js";
 import tradeRepository from "../repositories/tradeRepository.js";
 import userCardRepository from "../repositories/userCardRepository.js";
 import * as errors from "../utils/errors.js";
+import validate from "../utils/validate.js";
 
 // NOTE: 교환 제안 생성
 async function createTrade(userId, tradePostId, offeredCardId, content) {
@@ -20,7 +20,16 @@ async function createTrade(userId, tradePostId, offeredCardId, content) {
     if (!targetPhotocard)
       throw errors.cardNotFound("교환할 카드가 존재하지 않습니다.");
 
+    // 제안된 카드가 재고가 남았는지 확인
+    await validate.isCardInStock(
+      offeredCardId,
+      userId,
+      "현재 판매 중인 카드는 제안할 수 없습니다."
+    );
+
     const targetCardId = targetPhotocard.photocards_id;
+    // 동일한 교환 제안이 있는지 확인
+    await validate.validatePropose(offeredCardId, targetCardId);
     const photocardInfo = await cardRepository.findByCardId(targetCardId);
 
     // 알림 내용
@@ -70,7 +79,7 @@ async function getTradesHistory(cardId) {
     // 교환 제안 목록 + 제안한 카드의 정보 포함 (offeredCard Info 필요)
     return tradeHistories;
   } catch (error) {
-    if (error.code === 404) {
+    if (error.code !== 500) {
       throw error;
     }
     throw errors.internalServerError();
@@ -81,6 +90,12 @@ async function getTradesHistory(cardId) {
 async function patchTradeApprove(tradeId, userId) {
   try {
     const tradeHistory = await tradeRepository.findById(tradeId);
+    // 교환 제안이 없는 경우
+    if (!tradeHistory) throw errors.tradeNotFound();
+    // 교환 제안이 이미 처리된 경우
+    if (tradeHistory.trade_status !== "PENDING")
+      throw errors.invalidTradeStatus();
+
     // 타켓 카드 정보
     const photocardInfo = await cardRepository.findByCardId(
       tradeHistory.target_card_id
@@ -100,14 +115,27 @@ async function patchTradeApprove(tradeId, userId) {
     const targetNotifContent = `${targetCardOwnerNickname}님과의 [${photocardInfo.grade}|${photocardInfo.name}]의 포토카드 교환이 성사되었습니다.`;
     const offerNotifContent = `${offeredCardOwnerNickname}님과의 [${photocardInfo.grade}|${photocardInfo.name}]의 포토카드 교환이 성사되었습니다.`;
 
-    // 각각 실제 교환할 카드
-    const targetCard = await userCardRepository.findSellingCardById(tradeHistory.target_card_id);
-    const offeredCard = await userCardRepository.findFirstByCardId(
-      tradeHistory.offered_card_id
-    );
-
     // tradehistory 승인 + 교환 승인 알림 각각 생성
     const result = await prisma.$transaction(async (tx) => {
+      // REVIEW: 검증 및 row 쓰기 Rock
+      // 각각 실제 교환할 카드 owner id 확인할것
+      const targetCard = await userCardRepository.findSellingCardById(
+        tx,
+        tradeHistory.target_card_id,
+        targetCardOwner
+      );
+      // target 카드의 재고가 남아있는지
+      if (!targetCard) throw errors.cannotOnSaleCard("카드의 재고가 없습니다.");
+
+      const offeredCard = await userCardRepository.findUnsoldPhotocards(
+        tx,
+        tradeHistory.offered_card_id,
+        offeredCardOwner
+      );
+      // offered 카드의 재고가 남아있는지
+      if (!offeredCard)
+        throw errors.cannotOnSaleCard("제안된 카드의 재고가 없습니다.");
+
       // 교환 상태 승인으로 변경
       const approve = await tradeRepository.updateStatus(
         tx,
@@ -147,7 +175,9 @@ async function patchTradeApprove(tradeId, userId) {
 
     return result;
   } catch (error) {
-    console.log(error);
+    if (error.code !== 500) {
+      throw error;
+    }
     throw errors.internalServerError();
   }
 }
@@ -155,6 +185,11 @@ async function patchTradeApprove(tradeId, userId) {
 async function patchTradeReject(tradeId) {
   try {
     const tradeHistory = await tradeRepository.findById(tradeId);
+    // 교환 제안이 없는 경우
+    if (!tradeHistory) throw errors.tradeNotFound();
+    // 교환 제안이 이미 처리된 경우
+    if (tradeHistory.trade_status !== "PENDING")
+      throw errors.invalidTradeStatus();
 
     const photocardInfo = await cardRepository.findByCardId(
       tradeHistory.target_card_id
@@ -178,6 +213,9 @@ async function patchTradeReject(tradeId) {
 
     return result;
   } catch (error) {
+    if (error.code !== 500) {
+      throw error;
+    }
     throw errors.internalServerError();
   }
 }

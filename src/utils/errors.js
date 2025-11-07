@@ -115,7 +115,7 @@ export function cardAlreadyInTrade(
 }
 
 // 잘못된 거래 상태 (이미 승인/거절된 거래)
-export function invalidTradeStatus(message = "이미 처리된 거래입니다.") {
+export function invalidTradeStatus(message = "이미 처리된 교환입니다.") {
   return createError(409, "INVALID_TRADE_STATUS", message);
 }
 
@@ -124,9 +124,18 @@ export function alreadyReadNotification(message = "이미 읽은 알림입니다
   return createError(409, "ALREADY_READ_NOTIFICATION", message);
 }
 
-// 내 카드라 구매 불가 
-export function cannotBuyOwnCard(message = "자신이 등록한 카드는 구매할 수 없습니다.") {
+// 내 카드라 구매 불가
+export function cannotBuyOwnCard(
+  message = "자신이 등록한 카드는 구매할 수 없습니다."
+) {
   return createError(409, "CANNOT_BUY_OWN_CARD", message);
+}
+
+// 판매 중 카드는 제안 불가
+export function cannotOnSaleCard(
+  message = "카드의 재고가 없습니다."
+) {
+  return createError(409, "CANNOT_OFFER_ON_SALE_CARD", message);
 }
 /* ===========================
    🚦 413 / 429 / 5xx 계열
