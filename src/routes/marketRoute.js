@@ -14,6 +14,7 @@ import {
   removeListing,
   updateListing,
 } from "../controllers/listingController.js";
+import { purchaseCard } from "../controllers/purchaseController.js";
 
 const marketRouter = express.Router();
 
@@ -46,7 +47,12 @@ marketRouter.patch(
   rejectTrade
 );
 
-// marketRouter.post("/purchase");
+marketRouter.post(
+  "/purchase",
+  authMiddleware.verifyAccessToken,
+  authMiddleware.verifyTradePostCardAuth,
+  purchaseCard
+);
 
 const listingRouter = express.Router();
 
