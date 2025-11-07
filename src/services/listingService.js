@@ -30,7 +30,6 @@ async function createListing({
       total_count,
     });
     const ids = targets.map((target) => target.id);
-    console.log("ids: ", ids);
 
     // 2. tradePosts 테이블에 trade Post 생성
     // photocard cardid로 price 접근해서 price 변수에 할당
@@ -46,7 +45,6 @@ async function createListing({
       trade_note,
       price: priceValue, // 값(숫자)로 넘겨야 함
     });
-    console.log("tradePost: ", tradePost);
 
     // 3. userPhotocards에 trade_info_id 연결, is_sale true 변경
     const update = await listingRepository.linkTradeInfo({
@@ -187,9 +185,38 @@ async function removeListing(cardId) {
   return removedListing;
 }
 
-async function getListingDetail(cardId) {
-  const listingDetail = await listingRepository.findByCardId({ cardId });
-  return listingDetail;
+async function getListingDetail({ postId }) {
+  const listingDetail = await listingRepository.findByPostId({ postId });
+  if (!listingDetail) {
+    throw errors.notFound("판매 게시글");
+  }
+  const photocard = listingDetail.UserPhotocards?.[0]?.photocard;
+  const soldCards = await listingRepository.countSoldByPostId({ postId }); // 이미 팔린 카드
+
+  const formatted = {
+    id: listingDetail.id,
+    trade_grade: listingDetail.trade_grade,
+    trade_genre: listingDetail.trade_genre,
+    trade_note: listingDetail.trade_note,
+    price: listingDetail.price,
+    total_count: listingDetail.total_count,
+    left_count: listingDetail.total_count - soldCards,
+    card: photocard
+      ? {
+          id: photocard.id,
+          nickname: photocard.creator?.nickname,
+          image_url: photocard.image_url,
+          name: photocard.name,
+          description: photocard.description,
+          grade: photocard.grade,
+          genre: photocard.genre,
+        }
+      : null,
+    createdAt: listingDetail.createdAt,
+    updatedAt: listingDetail.updatedAt,
+  };
+
+  return formatted;
 }
 
 async function getMarketListings({
@@ -277,7 +304,6 @@ async function getMarketListings({
     orderBy: { id: "desc" },
   });
   const hasMore = lastData?.id === nextCursor ? false : true;
-
   return {
     lists: formattedList,
     nextCursor,
@@ -285,9 +311,117 @@ async function getMarketListings({
   };
 }
 
-async function getMyListings() {
-  const myListings = listingRepository.findByUserId();
-  return myListings;
+async function getMyListings({
+  userId,
+  page,
+  pageSize,
+  grade,
+  genre,
+  keyword,
+  saleType,
+  isSoldOut,
+}) {
+  // grade, genre 검증
+  if (grade && !Object.values(Grade).includes(grade))
+    throw errors.invalidQuery("유효하지 않은 등급입니다.");
+  if (genre && !Object.values(Genre).includes(genre))
+    throw errors.invalidQuery("유효하지 않은 장르입니다.");
+
+  // keyword 검증 (controller에서 했는데 service level에서도 할게 있나?)
+
+  // saleType 검증
+  if (saleType && saleType !== "sell" && saleType !== "trade")
+    throw errors.invalidQuery("유효하지 않은 saleType입니다.");
+
+  // saleType에 따른 필터링 처리
+  const tradeHistories =
+    await listingRepository.findTradeHistoriesByRequesterId({
+      requester_id: userId,
+    });
+  const offeredCardIds = tradeHistories.map((th) => th.offered_card_id);
+
+  let saleTypeFilter = {};
+  if (saleType === "sell") {
+    // trade_info_id가 null이 아닌 행만
+    saleTypeFilter = { trade_info_id: { not: null } };
+  } else if (saleType === "trade") {
+    if (offeredCardIds.length > 0) {
+      // offeredCardIds에 있는 id에 해당하는 행만
+      saleTypeFilter = { photocards_id: { in: offeredCardIds } };
+    } else {
+      // 교환 제시한 카드가 없으면 빈 결과 반환
+      saleTypeFilter = { photocards_id: { in: [] } };
+    }
+  }
+
+  // isSoldOut에 따른 필터링 처리
+  let isSoldOutFilter = {};
+  if (isSoldOut) {
+    // 품절
+    isSoldOutFilter = { owner_id: { not: userId } };
+  } else {
+    // 품절제외
+    isSoldOutFilter = { owner_id: userId };
+  }
+
+  const where = {
+    photocard: {
+      creator_id: userId,
+      ...(grade && { grade }),
+      ...(genre && { genre }),
+      ...(keyword && {
+        name: { contains: keyword, mode: "insensitive" },
+      }),
+    },
+    OR: [
+      { trade_info_id: { not: null } },
+      { photocards_id: { in: offeredCardIds } }, // photocards_id가 offeredIds id에 해당되는 행만
+    ],
+    ...(Object.keys(saleTypeFilter).length > 0 && saleTypeFilter),
+    ...(Object.keys(isSoldOutFilter).length > 0 && isSoldOutFilter),
+  };
+
+  const myListings = await listingRepository.findUserPhotocardsByUserId({
+    where,
+    page,
+    pageSize,
+  });
+
+  // 전체 개수
+  const totalCount = await prisma.userPhotocards.count({
+    where: { owner_id: userId },
+  });
+
+  // 등급 기본값 초기화 (groupBy 관계 필드 지원XX) -> join 수행, 각 userPC별 등급 접근 -> count
+  const gradeCounts = Object.fromEntries(
+    Object.values(Grade).map((grade) => [grade, 0])
+  ); // TODO: 추후 내 판매 카드 목록과 함수 공통화
+
+  // 등급별 개수 계산
+  const gradeData = await prisma.userPhotocards.findMany({
+    where,
+    select: { photocard: { select: { grade: true } } },
+  });
+  gradeData.forEach(({ photocard }) => (gradeCounts[photocard.grade] += 1));
+
+  const list = myListings.map((listing) => ({
+    id: listing.id,
+    name: listing.photocard.name,
+    grade: listing.photocard.grade,
+    genre: listing.photocard.genre,
+    available: listing.owner_id === userId ? 1 : 0,
+    image_url: listing.photocard.image_url,
+    createdAt: listing.createdAt,
+    updatedAt: listing.updatedAt,
+  }));
+  return {
+    totalCount: myListings.length,
+    totalGrades: gradeCounts,
+    page,
+    pageSize,
+    totalPage: Math.ceil(myListings.length / pageSize),
+    list,
+  };
 }
 
 export default {

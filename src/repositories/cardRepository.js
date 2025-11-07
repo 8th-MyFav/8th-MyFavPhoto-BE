@@ -117,7 +117,7 @@ async function findByUserId({
   // 등급 기본값 초기화 (groupBy 관계 필드 지원XX) -> join 수행, 각 userPC별 등급 접근 -> count
   const gradeCounts = Object.fromEntries(
     Object.values(Grade).map((grade) => [grade, 0])
-  );
+  ); // TODO: 추후 내 판매 카드 목록과 함수 공통화
 
   // 등급별 개수 계산
   const gradeData = await prisma.userPhotocards.findMany({
