@@ -285,7 +285,7 @@ async function getMarketListings({
     }
     // 판매 중인 카드만 필터링
     const availableCards = post.UserPhotocards.filter(
-      (userPhotocard) => !userPhotocard.is_sale
+      (userPhotocard) => userPhotocard.is_sale
     );
     // 첫번째 카드
     const firstCard = post.UserPhotocards[0]?.photocard;
