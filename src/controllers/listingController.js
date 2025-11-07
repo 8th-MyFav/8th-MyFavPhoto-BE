@@ -108,7 +108,7 @@ export async function getMarketListings(req, res, next) {
       cursor: cursorNum,
       grade,
       genre,
-      isSoldOut: isSoldOutCheck,
+      isSoldOut,
       orderByOption: orderBy,
       keyword,
     });

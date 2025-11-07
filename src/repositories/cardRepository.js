@@ -138,6 +138,7 @@ async function findByUserId({
       photocard: {
         select: {
           id: true,
+          name: true,
           creator_id: true,
           grade: true,
           genre: true,
