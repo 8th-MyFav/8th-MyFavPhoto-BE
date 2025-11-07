@@ -3,6 +3,7 @@ import * as errors from "../utils/errors.js";
 import purchaseRepository from "../repositories/purchaseRepository.js";
 import notificationRepository from "../repositories/notificationRepository.js";
 import authRepository from "../repositories/authRepository.js";
+import pointRepository from "../repositories/pointRepository.js";
 
 /* 
 카드 구매하기
@@ -14,7 +15,7 @@ import authRepository from "../repositories/authRepository.js";
 성공시
 - purchaseHistories 테이블에 구매 이력 추가
 - 내 포인트 제하기
-- 해당 userPhotocard의 is_sale을 false로, owner_id를 userId로 변경
+- 해당 userPhotocard의 is_sale을 false로, owner_id를 userId로 변경 // QUES: 가장 처음에 검증하면 롤백이 쉽고, 가장 마지막에 검증하면 확실한 안전이 보장 되는 것 같음.. 어떻게 할까
 - 구매자(userId)와 판매자(creator_id)에게 각각 알림 데이터 추가
 
 예외
@@ -100,7 +101,14 @@ async function purchaseCard({ userId, tradePostId, count }) {
     if (updated.count !== count)
       throw errors.cardAlreadySold("일부 카드가 이미 판매 완료되었습니다.");
 
-    // 4. purchase history 테이블에 거래 이력 추가
+    // 4. 포인트 차감
+    await pointRepository.deduct({
+      tx,
+      id: userId,
+      remainingPoints: points - count * price,
+    });
+
+    // 5. purchase history 테이블에 거래 이력 추가
     const purchaseHistory = await tx.purchaseHistories.create({
       data: {
         purchaser_id: userId,
@@ -110,25 +118,24 @@ async function purchaseCard({ userId, tradePostId, count }) {
     // ANCHOR: purchaseHistories는 updatedAt 필요 없을 듯?
 
     //const buyer = userId; // 구매자(나)
-    const seller = targetCard.creator.id; // 판매자(카드생성자)
+    const sellerId = targetCard.creator.id; // 판매자(카드생성자)
 
     // 각각 닉네임
-    const buyerNickname = await authRepository.findNickname(buyer);
-    const sellerNickname = await targetCard.creator.nickname;
+    const buyerNickname = await authRepository.findNickname(userId);
     // 각각 알림 내용
     const buyMessage = `[${targetCard.grade}|${targetCard.name}] ${count}장을 성공적으로 구매했습니다.`;
     const soldMessage = `${buyerNickname}님이 [${targetCard.grade}|${targetCard.name}]을 ${count}장 구매했습니다.`;
     const soldOutMessage = `[${targetCard.grade}|${targetCard.name}]이 품절되었습니다.`;
 
-    // 5. 알림 테이블에 구매, 판매 이력 추가
+    // 6. 알림 테이블에 구매, 판매 이력 추가
     // 구매완
     await notificationRepository.create(tx, userId, "PURCHASED", buyMessage);
     // 판매완
-    await notificationRepository.create(tx, seller, "SOLD", soldMessage);
+    await notificationRepository.create(tx, sellerId, "SOLD", soldMessage);
     if (availableCount === count) {
       await notificationRepository.create(
         tx,
-        seller,
+        sellerId,
         "SOLD_OUT",
         soldOutMessage
       );

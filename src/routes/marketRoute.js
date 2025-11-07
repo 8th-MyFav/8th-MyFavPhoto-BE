@@ -47,6 +47,7 @@ marketRouter.patch(
   rejectTrade
 );
 
+// NOTE: 카드 구매
 marketRouter.post(
   "/purchase",
   authMiddleware.verifyAccessToken,
