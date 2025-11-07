@@ -213,6 +213,9 @@ async function patchTradeReject(tradeId) {
 
     return result;
   } catch (error) {
+    if (error.code !== 500) {
+      throw error;
+    }
     throw errors.internalServerError();
   }
 }

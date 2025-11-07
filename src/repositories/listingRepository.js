@@ -175,6 +175,66 @@ async function findAll({ where, take, cursor, orderBy }) {
   });
 }
 
+/* market listing detail */
+
+async function findByPostId({ tx = prisma, postId }) {
+  return tx.tradePosts.findUnique({
+    where: { id: postId },
+    include: {
+      UserPhotocards: {
+        where: { is_sale: true },
+        take: 1,
+        select: {
+          photocard: {
+            select: {
+              id: true,
+              name: true,
+              grade: true,
+              genre: true,
+              image_url: true,
+              description: true,
+              createdAt: true,
+              updatedAt: true,
+              creator: { select: { nickname: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+async function countSoldByPostId({ tx = prisma, postId }) {
+  return tx.userPhotocards.count({
+    where: { trade_info_id: postId, is_sale: false },
+  });
+}
+
+async function findUserPhotocardsByUserId({
+  tx = prisma,
+  where,
+  page,
+  pageSize,
+}) {
+  console.log(`where: ${where}, page: ${page}, pageSize: ${pageSize}`);
+  return tx.userPhotocards.findMany({
+    where,
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+    include: {
+      photocard: true
+    },
+  });
+}
+
+// NOTE: 새로 만든 DB접근함수!! requester_id로 TradeHistories 조회하여 offered_card_id 배열 반환
+async function findTradeHistoriesByRequesterId({ tx = prisma, requester_id }) {
+  return tx.tradeHistories.findMany({
+    where: { requester_id, trade_status: "PENDING" },
+    select: { offered_card_id: true },
+  });
+}
+
 export default {
   findByCardId,
   findAvailable,
@@ -191,4 +251,8 @@ export default {
   deleteTradePost,
   findAll,
   findAndLockTradePostById,
+  findByPostId,
+  countSoldByPostId,
+  findTradeHistoriesByRequesterId,
+  findUserPhotocardsByUserId,
 };
