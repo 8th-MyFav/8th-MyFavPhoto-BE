@@ -249,7 +249,7 @@ async function getMarketListings({
     ...(grade && { grade }),
     ...(genre && { genre }),
     ...(isSoldOutCheck !== undefined && {
-      userPhotocards: isSoldOutCheck
+      UserPhotocards: isSoldOutCheck
         ? { none: { is_sale: true } } // userPhotocards에 is_sale이 모두 false인 것만 post 남김
         : { some: { is_sale: true } }, // userPhotocards에 is_sale이 하나라도 true면 post 남김
     }),
