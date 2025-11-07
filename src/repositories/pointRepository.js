@@ -26,8 +26,20 @@ async function update(id, data) {
   });
 }
 
+async function deduct({ tx = prisma, id, remainingPoints }) {
+  return tx.points.update({
+    where: {
+      id,
+    },
+    data: {
+      acc_point: remainingPoints,
+    },
+  });
+}
+
 export default {
   findById,
   create,
   update,
+  deduct,
 };
