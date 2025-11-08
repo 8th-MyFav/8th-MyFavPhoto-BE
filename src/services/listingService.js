@@ -231,7 +231,7 @@ async function getListingDetail({ postId }) {
 }
 
 async function getMarketListings({
-  take = 15,
+  take = 18,
   cursor,
   grade,
   genre,

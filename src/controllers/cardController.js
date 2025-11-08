@@ -49,7 +49,7 @@ export async function getMyCards(req, res, next) {
     const { userId } = req.auth;
     const {
       page = 1,
-      pageSize = 15,
+      pageSize = 18,
       grade,
       genre,
       keyword,

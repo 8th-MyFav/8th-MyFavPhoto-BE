@@ -77,7 +77,7 @@ export async function getListingDetail(req, res, next) {
 export async function getMarketListings(req, res, next) {
   try {
     const {
-      take = 15,
+      take = 18,
       cursor,
       grade,
       genre,
@@ -123,7 +123,7 @@ export async function getMyListings(req, res, next) {
     const { userId } = req.auth;
     const {
       page = 1,
-      pageSize = 15,
+      pageSize = 18,
       grade,
       genre,
       saleType,

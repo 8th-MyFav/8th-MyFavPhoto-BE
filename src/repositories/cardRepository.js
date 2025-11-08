@@ -89,7 +89,7 @@ async function create(userId, cardData) {
 async function findByUserId({
   userId,
   page = 1,
-  pageSize = 15,
+  pageSize = 18,
   grade,
   genre,
   keyword,
