@@ -120,14 +120,15 @@ async function updateTradePost({
 }
 
 // NOTE: trade post id로 잠금 설정
-async function findAndLockTradePostById({ tx = prisma, id }) {
-  return tx.tradePosts
-    .findUniqueOrThrow({
-      // 테이블에서 id 일치하는 당일 행 조회
-      where: { id },
-    })
-    .forUpdate(); // 행 수준 잠금 (다른 트랜잭션에서 수정/삭제 금지)
-}
+// async function findAndLockTradePostById({ tx = prisma, id }) {
+//   return tx.tradePosts
+//     .findUniqueOrThrow({
+//       // 테이블에서 id 일치하는 당일 행 조회
+//       where: { id },
+//     })
+//     .forUpdate(); // 행 수준 잠금 (다른 트랜잭션에서 수정/삭제 금지)
+// }
+// 에러 확인으로 잠시 주석 처리
 
 /* delete listing */
 
@@ -221,7 +222,7 @@ async function findUserPhotocardsByUserId({
     skip: (page - 1) * pageSize,
     take: pageSize,
     include: {
-      photocard: true
+      photocard: true,
     },
   });
 }
@@ -249,7 +250,7 @@ export default {
   findStatusTrue,
   deleteTradePost,
   findAll,
-  findAndLockTradePostById,
+  // findAndLockTradePostById,
   findByPostId,
   countSoldByPostId,
   findTradeHistoriesByRequesterId,

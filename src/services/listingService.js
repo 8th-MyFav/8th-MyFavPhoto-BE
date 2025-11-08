@@ -23,14 +23,24 @@ async function createListing({
     throw errors.invalidData("유효하지 않은 장르입니다.");
 
   const createdListing = await prisma.$transaction(async (tx) => {
+    // 0. 이미 판매 등록된 카드인지 확인
+    const existingPostId = await listingRepository.findTradePostIdByCardId({
+      tx,
+      cardId,
+    });
+    if (existingPostId) {
+      throw errors.cardAlreadyInTrade("이미 판매 등록된 카드입니다.");
+    }
+
     // 1. userPhotocards 테이블에서 total_count만큼 id 가져오기
     const targets = await listingRepository.findAvailable({
       tx,
       cardId,
       total_count,
     });
+    if (targets.length === 0) throw errors.validationError("판매할 수 있는 카드가 없습니다.");
     const ids = targets.map((target) => target.id);
-
+// 먼저 이 카드에 post id 가 있는지 검증해야됨. 이미 판매 올라간 카드일 수도 있으니까..
     // 2. tradePosts 테이블에 trade Post 생성
     // photocard cardid로 price 접근해서 price 변수에 할당
     const { price: priceValue } = await prisma.photocards.findUnique({
@@ -91,7 +101,8 @@ async function updateListing(listingData) {
 
     // NOTE: 비관적 잠금(Pessimistic Lock)을 통해 tradePost 레코드를 잠급니다.
     // 이 트랜잭션이 끝날 때까지 다른 트랜잭션은 이 레코드를 수정할 수 없습니다.
-    await listingRepository.findAndLockTradePostById({ tx, id: tradePostId });
+    // await listingRepository.findAndLockTradePostById({ tx, id: tradePostId });
+    // TODO: 구매 로직 참고해 레코드 잠금 개선할 것
 
     // 1. 판매 수량 조절
     // 기존 판매 개수, 새 판매 개수
