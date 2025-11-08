@@ -43,7 +43,15 @@ async function createCard(userId, cardData) {
   return createdCard;
 }
 
-async function getMyCards({ userId, page, pageSize, grade, genre, keyword }) {
+async function getMyCards({
+  userId,
+  page,
+  pageSize,
+  grade,
+  genre,
+  keyword,
+  forSale,
+}) {
   if (!userId) throw errors.unauthorized();
 
   // grade가 DB에 허용된 값인지
@@ -61,6 +69,7 @@ async function getMyCards({ userId, page, pageSize, grade, genre, keyword }) {
     grade,
     genre,
     keyword,
+    forSale,
   });
   return myCards;
 }

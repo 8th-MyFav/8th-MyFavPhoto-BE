@@ -93,6 +93,7 @@ async function findByUserId({
   grade,
   genre,
   keyword,
+  forSale,
 }) {
   // 필터 추가
   // Photocards 모델 기준, 나와 연결된(owner_id) UserPhotocards가 하나라도 있는 카드 조회
@@ -100,6 +101,8 @@ async function findByUserId({
     userPhotocards: {
       some: {
         owner_id: userId,
+        // forSale 파라미터가 존재할 경우, 아직 판매 등록되지 않은 카드만 필터링
+        ...(forSale && { trade_info_id: null }),
       },
     },
     ...(grade && { grade }),
@@ -133,7 +136,10 @@ async function findByUserId({
           select: {
             userPhotocards: {
               // userPhotocards 관계 데이터
-              where: { owner_id: userId },
+              where: {
+                owner_id: userId,
+                ...(forSale && { trade_info_id: null }),
+              },
             },
           },
         },
