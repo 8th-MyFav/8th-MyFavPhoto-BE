@@ -71,15 +71,7 @@ async function create(userId, cardData) {
 }
 
 /**
- * 카드 정보 수정
- * @param {number} a 첫 번째 숫자
- * @param {number} b 두 번째 숫자
- * @returns {number} 두 숫자의 합
- */
-async function update(cardId, updateData) {}
-
-/**
- * 특정 유저의 포토카드 목록을 조회합니다.
+ * 내 포토카드 목록 조회
  *
  * - 전체 카드 기준으로 등급별 개수(`gradeCounts`)와 총 개수(`totalCount`)를 계산하고,
  * - 필터가 적용된 카드 리스트(`lists`)를 페이지네이션하여 반환합니다.
@@ -103,70 +95,77 @@ async function findByUserId({
   keyword,
 }) {
   // 필터 추가
-  const baseWhere = { owner_id: userId };
-  const filteredWhere = {
-    ...baseWhere,
-    ...(grade && { photocard: { grade } }),
-    ...(genre && { photocard: { genre } }),
-    ...(keyword && {
-      photocard: { name: { contains: keyword, mode: "insensitive" } },
-    }),
-  };
-
-  // 전체 개수
-  const totalCount = await prisma.userPhotocards.count({ where: baseWhere });
-
-  // 등급 기본값 초기화 (groupBy 관계 필드 지원XX) -> join 수행, 각 userPC별 등급 접근 -> count
-  const gradeCounts = Object.fromEntries(
-    Object.values(Grade).map((grade) => [grade, 0])
-  ); // TODO: 추후 내 판매 카드 목록과 함수 공통화
-
-  // 등급별 개수 계산
-  const gradeData = await prisma.userPhotocards.findMany({
-    where: baseWhere,
-    select: { photocard: { select: { grade: true } } },
-  });
-  gradeData.forEach(({ photocard }) => (gradeCounts[photocard.grade] += 1));
-
-  const lists = await prisma.userPhotocards.findMany({
-    where: filteredWhere,
-    skip: (page - 1) * pageSize,
-    take: pageSize,
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      createdAt: true,
-      updatedAt: true,
-      photocard: {
-        select: {
-          id: true,
-          name: true,
-          creator_id: true,
-          grade: true,
-          genre: true,
-          price: true,
-          total_issued: true,
-          image_url: true,
-        },
+  // Photocards 모델 기준, 나와 연결된(owner_id) UserPhotocards가 하나라도 있는 카드 조회
+  const where = {
+    userPhotocards: {
+      some: {
+        owner_id: userId,
       },
     },
+    ...(grade && { grade }),
+    ...(genre && { genre }),
+    ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
+  };
+
+  // 3개의 DB 요청을 병렬 처리 (그래서 트챈잭션)
+  const [totalCount, gradeGroups, lists] = await prisma.$transaction([
+    // 1. 필터링된 전체 개수 조회
+    prisma.photocards.count({ where }),
+
+    // 2. 등급별 개수 조회 (DB에서 직접 그룹화)
+    prisma.photocards.groupBy({
+      by: ["grade"],
+      where,
+      _count: {
+        grade: true,
+      },
+    }),
+
+    // 3. 페이지네이션된 목록 조회
+    prisma.photocards.findMany({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: {
+          // 데이터 개수 세기
+          select: {
+            userPhotocards: {
+              // userPhotocards 관계 데이터
+              where: { owner_id: userId },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  // 등급별 개수 포맷팅
+  const gradeCounts = Object.fromEntries(
+    Object.values(Grade).map((grade) => [grade, 0])
+  );
+  gradeGroups.forEach((group) => {
+    gradeCounts[group.grade] = group._count.grade;
   });
+
   const formattedList = lists.map((item) => ({
-    id: item.photocard.id,
-    creator_id: item.photocard.creator_id,
-    name: item.photocard.name,
-    grade: item.photocard.grade,
-    genre: item.photocard.genre,
-    price: item.photocard.price,
-    total_issued: item.photocard.total_issued,
-    count: 1, // 유저 보유카드 기준이라 기본 1
-    image_url: item.photocard.image_url,
+    id: item.id,
+    creator_id: item.creator_id,
+    name: item.name,
+    grade: item.grade,
+    genre: item.genre,
+    price: item.price,
+    total_issued: item.total_issued,
+    count: item._count.userPhotocards, // 사용자가 보유한 실제 카드 수량
+    image_url: item.image_url,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   }));
+
   return {
     totalCount,
-    grade: gradeCounts,
+    totalGrades: gradeCounts,
     lists: formattedList,
   };
 }
