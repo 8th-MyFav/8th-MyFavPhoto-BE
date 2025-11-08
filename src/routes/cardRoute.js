@@ -21,10 +21,13 @@ import { createCard, getMyCardDetail, getMyCards } from "../controllers/cardCont
 
 const cardRouter = express.Router();
 
+// NOTE: 카드 생성하기
 cardRouter.post("/", authMiddleware.verifyAccessToken, createCard);
 
+// NOTE: 마이 갤러리 목록, 판매 올릴 내 카드 목록 조회
 cardRouter.get("/me", authMiddleware.verifyAccessToken, getMyCards);
 
+// NOTE: 판매 올릴 내 카드 상세
 cardRouter.get('/:cardId', authMiddleware.verifyAccessToken, getMyCardDetail)
 
 export default cardRouter;
