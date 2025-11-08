@@ -198,7 +198,6 @@ async function findCardByCardId({ tx, cardId }) {
 
 export default {
   create,
-  update,
   findByUserId,
   findByCardId,
   findCardByCardId,
