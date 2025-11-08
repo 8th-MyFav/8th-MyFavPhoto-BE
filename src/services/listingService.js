@@ -257,14 +257,31 @@ async function getMarketListings({
 
   // 필터링 (grade, genre, isSoldOut, keyword)
   const where = {
-    ...(grade && { grade }),
-    ...(genre && { genre }),
-    ...(isSoldOutCheck !== undefined && {
-      UserPhotocards: isSoldOutCheck
-        ? { none: { is_sale: true } } // userPhotocards에 is_sale이 모두 false인 것만 post 남김
-        : { some: { is_sale: true } }, // userPhotocards에 is_sale이 하나라도 true면 post 남김
-    }),
-    ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
+    AND: [
+      // 판매 상태 필터링
+      {
+        UserPhotocards:
+          isSoldOutCheck === true
+            ? { none: { is_sale: true } } // userPhotocards의 is_sale이 모두 false인 post만 남김
+            : isSoldOutCheck === false
+            ? { some: { is_sale: true } } // userPhotocards의 is_sale:이 하나라도 true인 post 남김
+            : {}, // 모든 게시글
+      },
+      {
+        UserPhotocards: {
+          // 연결된 카드 중 하나라도 조건을 만족하면 됨
+          some: {
+            photocard: {
+              ...(grade && { grade }),
+              ...(genre && { genre }),
+              ...(keyword && {
+                name: { contains: keyword, mode: "insensitive" },
+              }),
+            },
+          },
+        },
+      },
+    ],
   };
 
   // 정렬
