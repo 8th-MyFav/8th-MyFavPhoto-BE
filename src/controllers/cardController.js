@@ -47,7 +47,14 @@ export async function createCard(req, res, next) {
 export async function getMyCards(req, res, next) {
   try {
     const { userId } = req.auth;
-    const { page = 1, pageSize = 15, grade, genre, keyword } = req.query;
+    const {
+      page = 1,
+      pageSize = 18,
+      grade,
+      genre,
+      keyword,
+      forSale,
+    } = req.query;
     const pageNum = +page;
     const pageSizeNum = +pageSize;
 
@@ -62,11 +69,14 @@ export async function getMyCards(req, res, next) {
         .status(400)
         .json({ message: "페이지 크기는 1에서 50 사이여야 합니다." });
     }
-    if (keyword && keyword.length > 50) { 
+    if (keyword && keyword.length > 50) {
       return res
         .status(400)
         .json({ message: "검색어는 최대 50자까지 입력할 수 있습니다." });
     }
+
+    // forSale 파라미터의 존재 여부만 체크하여 boolean으로 변환
+    const forSaleCheck = forSale !== undefined;
 
     const myCards = await cardService.getMyCards({
       userId,
@@ -75,6 +85,7 @@ export async function getMyCards(req, res, next) {
       grade: grade || undefined,
       genre: genre || undefined,
       keyword: keyword || undefined,
+      forSale: forSaleCheck,
     });
 
     return res.status(200).json(myCards);

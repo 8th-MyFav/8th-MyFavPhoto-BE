@@ -231,7 +231,7 @@ async function getListingDetail({ postId }) {
 }
 
 async function getMarketListings({
-  take = 15,
+  take = 18,
   cursor,
   grade,
   genre,
@@ -301,12 +301,19 @@ async function getMarketListings({
   // tradePosts 테이블 조회
   const lists = await listingRepository.findAll({
     where,
-    take,
+    take: take + 1, // 요청된 개수보다 하나 더 조회
     cursor,
     orderBy,
   });
 
-  const formattedList = lists.map((post) => {
+  // hasMore 계산 및 응답 목록 슬라이싱
+  const hasMore = lists.length > take; 
+  const responseLists = hasMore ? lists.slice(0, take) : lists;
+  const nextCursor = responseLists.length
+    ? responseLists[responseLists.length - 1].id
+    : null;
+
+  const formattedList = responseLists.map((post) => {
     // post에 연결된 userPhotocards가 없을 때
     if (post.UserPhotocards && post.UserPhotocards.length === 0) {
       throw errors.notFound(`포스트 ${post.id}`);
@@ -330,12 +337,6 @@ async function getMarketListings({
     };
   });
 
-  // tradePost 마지막 id와 nextCursor가 같으면 false, 아니면 true
-  const nextCursor = lists.length ? lists[lists.length - 1].id : null;
-  const lastData = await prisma.tradePosts.findFirst({
-    orderBy: { id: "desc" },
-  });
-  const hasMore = lastData?.id === nextCursor ? false : true;
   return {
     lists: formattedList,
     nextCursor,
