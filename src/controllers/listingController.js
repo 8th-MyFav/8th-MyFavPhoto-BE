@@ -1,6 +1,9 @@
 import listingService from "../services/listingService.js";
 import * as errors from "../utils/errors.js";
 
+/**
+ * 판매 게시글 생성
+ */
 export async function createListing(req, res, next) {
   try {
     const { userId } = req.auth; // TODO: 추후 owner_id 정보 추가 시 필요
@@ -34,6 +37,9 @@ export async function createListing(req, res, next) {
   }
 }
 
+/**
+ * 판매 게시글 수정
+ */
 export async function updateListing(req, res, next) {
   try {
     const cardId = +req.params.cardId;
@@ -50,6 +56,9 @@ export async function updateListing(req, res, next) {
   }
 }
 
+/**
+ * 판매 게시글 삭제
+ */
 export async function removeListing(req, res, next) {
   try {
     const cardId = +req.params.cardId;
@@ -60,6 +69,12 @@ export async function removeListing(req, res, next) {
   }
 }
 
+/**
+ * 판매 게시글 상세 조회
+ * @param {import("express").Request} req - 요청 객체
+ * @param {import("express").Response} res - 응답 객체
+ * @param {import("express").NextFunction} next - next 미들웨어
+ */
 export async function getListingDetail(req, res, next) {
   try {
     const postId = +req.params.postId;
@@ -74,6 +89,12 @@ export async function getListingDetail(req, res, next) {
   }
 }
 
+/**
+ * 마켓 판매 게시글 목록 조회
+ * @param {import("express").Request} req - 요청 객체
+ * @param {import("express").Response} res - 응답 객체
+ * @param {import("express").NextFunction} next - next 미들웨어
+ */
 export async function getMarketListings(req, res, next) {
   try {
     const {
@@ -118,6 +139,12 @@ export async function getMarketListings(req, res, next) {
   }
 }
 
+/**
+ * 내 판매/교환 내역 조회
+ * @param {import("express").Request} req - 요청 객체
+ * @param {import("express").Response} res - 응답 객체
+ * @param {import("express").NextFunction} next - next 미들웨어
+ */
 export async function getMyListings(req, res, next) {
   try {
     const { userId } = req.auth;

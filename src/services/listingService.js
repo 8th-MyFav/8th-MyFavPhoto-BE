@@ -3,7 +3,11 @@ import prisma from "../config/prisma.js";
 import listingRepository from "../repositories/listingRepository.js";
 import * as errors from "../utils/errors.js";
 
-// NOTE: 거래 게시글 생성
+/**
+ * 판매 게시글 생성
+ * @param {object} listingData - 생성할 게시글 데이터
+ * @returns {Promise<object>} 생성된 게시글 정보
+ */
 async function createListing({
   cardId,
   total_count,
@@ -38,9 +42,10 @@ async function createListing({
       cardId,
       total_count,
     });
-    if (targets.length === 0) throw errors.validationError("판매할 수 있는 카드가 없습니다.");
+    if (targets.length === 0)
+      throw errors.validationError("판매할 수 있는 카드가 없습니다.");
     const ids = targets.map((target) => target.id);
-// 먼저 이 카드에 post id 가 있는지 검증해야됨. 이미 판매 올라간 카드일 수도 있으니까..
+    // 먼저 이 카드에 post id 가 있는지 검증해야됨. 이미 판매 올라간 카드일 수도 있으니까..
     // 2. tradePosts 테이블에 trade Post 생성
     // photocard cardid로 price 접근해서 price 변수에 할당
     const { price: priceValue } = await prisma.photocards.findUnique({
@@ -84,6 +89,11 @@ async function createListing({
   return createdListing;
 }
 
+/**
+ * 판매 게시글 수정
+ * @param {object} listingData - 수정할 게시글 데이터
+ * @returns {Promise<object>} 수정된 게시글 정보
+ */
 async function updateListing(listingData) {
   const updatedListing = await prisma.$transaction(async (tx) => {
     const { cardId, price, total_count, trade_grade, trade_genre, trade_note } =
@@ -170,6 +180,11 @@ async function updateListing(listingData) {
   return updatedListing;
 }
 
+/**
+ * 판매 게시글 삭제
+ * @param {number} cardId - 포토카드 ID
+ * @returns {Promise<object>} 삭제 완료 메시지
+ */
 async function removeListing(cardId) {
   const removedListing = await prisma.$transaction(async (tx) => {
     if (!cardId) throw errors.invalidData("유효하지 않은 카드 id입니다");
@@ -196,6 +211,12 @@ async function removeListing(cardId) {
   return removedListing;
 }
 
+/**
+ * 판매 게시글 상세 조회
+ * @param {object} options - 조회 옵션
+ * @param {number} options.postId - 포스트 ID
+ * @returns {Promise<object>} 게시글 상세 정보
+ */
 async function getListingDetail({ postId }) {
   const listingDetail = await listingRepository.findByPostId({ postId });
   if (!listingDetail) {
@@ -230,6 +251,11 @@ async function getListingDetail({ postId }) {
   return formatted;
 }
 
+/**
+ * 마켓 판매 게시글 목록 조회
+ * @param {object} options - 조회 옵션
+ * @returns {Promise<object>} 게시글 목록, 다음 커서, 추가 데이터 여부
+ */
 async function getMarketListings({
   take = 18,
   cursor,
@@ -307,7 +333,7 @@ async function getMarketListings({
   });
 
   // hasMore 계산 및 응답 목록 슬라이싱
-  const hasMore = lists.length > take; 
+  const hasMore = lists.length > take;
   const responseLists = hasMore ? lists.slice(0, take) : lists;
   const nextCursor = responseLists.length
     ? responseLists[responseLists.length - 1].id
@@ -344,6 +370,11 @@ async function getMarketListings({
   };
 }
 
+/**
+ * 내 판매/교환 내역 조회
+ * @param {object} options - 조회 옵션
+ * @returns {Promise<object>} 내 판매/교환 내역 목록 및 페이지 정보
+ */
 async function getMyListings({
   userId,
   page,
