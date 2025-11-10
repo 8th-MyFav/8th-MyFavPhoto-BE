@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./config/swagger.js";
 import cookieParser from "cookie-parser";
 import prisma from "./config/prisma.js";
 import authRouter from "./routes/authRoute.js";
@@ -18,6 +20,9 @@ app.use(morgan("dev"));
 
 // 모든 도메인 허용
 app.use(cors());
+
+// Swagger UI 설정
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // 라우트
 app.use("/auth", authRouter);
