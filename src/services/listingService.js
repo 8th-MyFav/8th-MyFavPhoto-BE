@@ -186,7 +186,6 @@ async function updateListing(listingData) {
  * @returns {Promise<object>} 삭제 완료 메시지
  */
 async function removeListing(cardId) {
-  console.log(cardId);
   const removedListing = await prisma.$transaction(async (tx) => {
     if (!cardId) throw errors.invalidData("유효하지 않은 카드 id입니다");
 
@@ -200,6 +199,10 @@ async function removeListing(cardId) {
       tx,
       cardId,
     });
+
+    // 잠재적 에러 (tradePostId 없는 경우)
+    if (!tradePostId)
+      throw errors.cardAlreadySold("판매 취소 중 카드가 모두 판매되었습니다.");
 
     // 3. 해당 데이터의 is_sale false로 변경
     const update = await listingRepository.resetSaleStatus({ tx, ids });
