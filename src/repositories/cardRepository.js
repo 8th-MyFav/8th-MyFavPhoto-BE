@@ -2,38 +2,10 @@ import { Grade } from "@prisma/client";
 import prisma from "../config/prisma.js";
 
 /**
- * DB에서 카드를 다루는 가장 하위 레벨
- * @태그 타입 이름 설명
- */
-
-/**
- * 새로운 포토카드를 생성합니다.
- * 이 함수는 photocards 테이블과 user_photocards 테이블 모두에 데이터를 추가합니다.
- *
- * @async
- * @function createCard
- * @param {Object} cardData - 생성할 카드 정보 (req.body에서 전달됨)
- * @param {string} cardData.name - 포토카드 이름
- * @param {string} cardData.grade - 포토카드 등급 (예: "RARE", "COMMON")
- * @param {string} cardData.genre - 포토카드 장르 (예: "KPOP", "ANIME")
- * @param {number} cardData.price - 카드 판매 가격
- * @param {number} cardData.total_issued - 카드 총 발행량
- * @param {string} cardData.description - 카드 설명
- * @param {string} cardData.image_url - 카드 이미지 URL
- * @param {number} userId - 현재 로그인한 유저의 ID (owner_id로 사용됨)
- * @returns {Promise<Object>} 생성된 카드 정보 객체
- * @throws {Error} 카드 생성 중 에러 발생 시 예외를 던집니다.
- *
- * @example
- * const newCard = await createCard({
- *   name: "BTS RM",
- *   grade: "RARE",
- *   genre: "KPOP",
- *   price: 10,
- *   total_issued: 1,
- *   description: "카드 설명입니다.",
- *   image_url: "https://example.com/card.jpg"
- * }, 1);
+ * 카드 생성
+ * @param {number} userId - 사용자 ID
+ * @param {object} cardData - 생성할 카드 데이터
+ * @returns {Promise<object>} 생성된 카드 정보
  */
 async function create(userId, cardData) {
   // tx: 트랜잭션 내에 사용하는 클라이언트 인스턴스
@@ -71,20 +43,16 @@ async function create(userId, cardData) {
 }
 
 /**
- * 내 포토카드 목록 조회
- *
- * - 전체 카드 기준으로 등급별 개수(`gradeCounts`)와 총 개수(`totalCount`)를 계산하고,
- * - 필터가 적용된 카드 리스트(`lists`)를 페이지네이션하여 반환합니다.
- *
- * @param {Object} params                  - 조회 조건
- * @param {number} params.userId           - 유저 ID
- * @param {number} params.page             - 페이지 번호 (1부터 시작)
- * @param {number} params.pageSize         - 페이지당 항목 수
- * @param {string} [params.grade]          - 필터용 등급 (COMMON, RARE, SUPER_RARE, LEGENDARY)
- * @param {string} [params.genre]          - 필터용 장르 (KPOP, ACTOR, ESPORTS, KBO, ANIMATION)
- * @param {string} [params.keyword]        - 카드 이름 검색 키워드 (대소문자 무시)
- * @returns {Promise<{ totalCount: number, gradeCounts: Object, lists: Object[] }>}
- *          카드 총 개수, 등급별 개수 요약, 필터된 카드 목록을 포함한 객체
+ * 내 카드 목록 조회
+ * @param {object} options - 조회 옵션
+ * @param {number} options.userId - 사용자 ID
+ * @param {number} options.page - 페이지 번호
+ * @param {number} options.pageSize - 페이지 크기
+ * @param {string} [options.grade] - 등급 필터
+ * @param {string} [options.genre] - 장르 필터
+ * @param {string} [options.keyword] - 키워드 검색
+ * @param {boolean} [options.forSale] - 판매 등록 가능한 카드만 조회할지 여부
+ * @returns {Promise<object>} 카드 목록 및 페이지 정보
  */
 async function findByUserId({
   userId,
@@ -177,12 +145,10 @@ async function findByUserId({
 }
 
 /**
- * 특정 카드 조회
- * @param {Object} params
- * @param {number} params.cardId
- * @returns {Promise<Object|null>}
+ * 카드 ID로 카드 조회
+ * @param {number} cardId - 카드 ID
+ * @returns {Promise<object|null>} 조회된 카드 정보
  */
-
 async function findByCardId(cardId) {
   const cardDetail = await prisma.photocards.findUnique({
     where: { id: cardId },
@@ -190,6 +156,13 @@ async function findByCardId(cardId) {
   return cardDetail;
 }
 
+/**
+ * 카드 ID로 카드 조회 (트랜잭션용)
+ * @param {object} options - 조회 옵션
+ * @param {object} options.tx - Prisma 트랜잭션 클라이언트
+ * @param {number} options.cardId - 카드 ID
+ * @returns {Promise<object|null>} 조회된 카드 정보
+ */
 async function findCardByCardId({ tx, cardId }) {
   return tx.photocards.findUnique({
     where: { id: cardId },
