@@ -70,6 +70,7 @@ async function findByUserId({
       some: {
         owner_id: userId,
         // forSale 파라미터가 존재할 경우, 아직 판매 등록되지 않은 카드만 필터링
+        // TODO: forSale일 땐 creator_id: userId인거로 검색해야함
         ...(forSale && { trade_info_id: null }),
       },
     },
@@ -130,7 +131,7 @@ async function findByUserId({
     grade: item.grade,
     genre: item.genre,
     price: item.price,
-    // total_issued: item.total_issued, 
+    // total_issued: item.total_issued,
     count: item._count.userPhotocards, // 사용자가 보유한 실제 카드 수량
     image_url: item.image_url,
     createdAt: item.createdAt,

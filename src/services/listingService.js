@@ -374,7 +374,7 @@ async function getMarketListings({
 }
 
 /**
- * 내 판매/교환 내역 조회
+ * 내 판매 포토카드 (판매/교환) 목록 조회
  * @param {object} options - 조회 옵션
  * @returns {Promise<object>} 내 판매/교환 내역 목록 및 페이지 정보
  */
@@ -419,7 +419,7 @@ async function getMyListings({
       // 교환 제시한 카드가 없으면 빈 결과 반환
       saleTypeFilter = { photocards_id: { in: [] } };
     }
-  }
+  } // TODO: 교환은 1장만 return되도록 함
 
   // isSoldOut에 따른 필터링 처리
   let isSoldOutFilter = {};
