@@ -130,7 +130,7 @@ async function findByUserId({
     grade: item.grade,
     genre: item.genre,
     price: item.price,
-    total_issued: item.total_issued,
+    // total_issued: item.total_issued, 
     count: item._count.userPhotocards, // 사용자가 보유한 실제 카드 수량
     image_url: item.image_url,
     createdAt: item.createdAt,
