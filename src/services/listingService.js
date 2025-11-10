@@ -434,19 +434,26 @@ async function getMyListings({
     isSoldOutFilter = { owner_id: userId };
   }
 
-  const where = {
+  const fixedWhere = {
     photocard: {
       creator_id: userId,
+    },
+    OR: [
+      { trade_info_id: { not: null } },
+      { photocards_id: { in: offeredCardIds } }, // photocards_id가 offeredIds id에 해당되는 행만
+    ],
+  };
+
+  const where = {
+    ...fixedWhere,
+    photocard: {
+      ...fixedWhere.photocard,
       ...(grade && { grade }),
       ...(genre && { genre }),
       ...(keyword && {
         name: { contains: keyword, mode: "insensitive" },
       }),
     },
-    OR: [
-      { trade_info_id: { not: null } },
-      { photocards_id: { in: offeredCardIds } }, // photocards_id가 offeredIds id에 해당되는 행만
-    ],
     ...(Object.keys(saleTypeFilter).length > 0 && saleTypeFilter),
     ...(Object.keys(isSoldOutFilter).length > 0 && isSoldOutFilter),
   };
@@ -459,7 +466,7 @@ async function getMyListings({
 
   // 전체 개수
   const totalCount = await prisma.userPhotocards.count({
-    where: { owner_id: userId },
+    where: fixedWhere,
   });
 
   // 등급 기본값 초기화 (groupBy 관계 필드 지원XX) -> join 수행, 각 userPC별 등급 접근 -> count
@@ -469,7 +476,7 @@ async function getMyListings({
 
   // 등급별 개수 계산
   const gradeData = await prisma.userPhotocards.findMany({
-    where,
+    where: fixedWhere,
     select: { photocard: { select: { grade: true } } },
   });
   gradeData.forEach(({ photocard }) => (gradeCounts[photocard.grade] += 1));
@@ -485,7 +492,7 @@ async function getMyListings({
     updatedAt: listing.updatedAt,
   }));
   return {
-    totalCount: myListings.length,
+    totalCount: totalCount,
     totalGrades: gradeCounts,
     page,
     pageSize,
