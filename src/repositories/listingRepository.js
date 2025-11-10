@@ -268,7 +268,7 @@ async function findByPostId({ tx = prisma, postId }) {
     where: { id: postId },
     include: {
       UserPhotocards: {
-        where: { is_sale: true },
+        // where: { is_sale: true }, // FIX: 만약 판매 게시글의 모든 userPhotocard가 판매 완료되면 listindDetail.UserPhotocards가 비어 접근 불가능함,, 그래서 카드 판매 상태와 상관없이 userPhotocards를 가져올 수 있도록 get
         take: 1,
         select: {
           photocard: {
