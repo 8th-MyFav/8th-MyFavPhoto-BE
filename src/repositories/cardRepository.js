@@ -66,34 +66,41 @@ async function findByUserId({
   // 필터 추가
   // 마이갤러리는 카드 소유자가 나인 카드
   // 판매 올릴 카드 목록은 카드 생성자도, 현재 소유자도 나고 판매 올리지도 않은 카드
-  const where = {
-    ...(forSale && { creator_id: userId }),
+  const galleryWhere = {
     userPhotocards: {
       some: {
         owner_id: userId,
-        ...(forSale && { trade_info_id: null }),
       },
     },
+  };
+  const where = {
+    ...galleryWhere,
     ...(grade && { grade }),
     ...(genre && { genre }),
+    ...(forSale && {
+      creator_id: userId,
+      userPhotocards: { some: { trade_info_id: null } },
+    }),
     ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
   };
 
-  // 3개의 DB 요청을 병렬 처리 (그래서 트챈잭션)
+  // 3개의 DB 요청을 병렬 처리 (데이터 정합성용)
   const [totalCount, gradeGroups, lists] = await prisma.$transaction([
     // 1. 필터링된 전체 개수 조회
-    prisma.photocards.count({ where }),
+    prisma.photocards.count({
+      where: galleryWhere,
+    }),
 
     // 2. 등급별 개수 조회 (DB에서 직접 그룹화)
     prisma.photocards.groupBy({
       by: ["grade"],
-      where,
+      where: galleryWhere,
       _count: {
         grade: true,
       },
     }),
 
-    // 3. 페이지네이션된 목록 조회
+    // 3. 목록 조회
     prisma.photocards.findMany({
       where,
       skip: (page - 1) * pageSize,
