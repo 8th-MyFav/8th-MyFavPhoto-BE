@@ -64,13 +64,13 @@ async function findByUserId({
   forSale,
 }) {
   // 필터 추가
-  // Photocards 모델 기준, 나와 연결된(owner_id) UserPhotocards가 하나라도 있는 카드 조회
+  // 마이갤러리는 카드 소유자가 나인 카드
+  // 판매 올릴 카드 목록은 카드 생성자도, 현재 소유자도 나고 판매 올리지도 않은 카드
   const where = {
+    ...(forSale && { creator_id: userId }),
     userPhotocards: {
       some: {
         owner_id: userId,
-        // forSale 파라미터가 존재할 경우, 아직 판매 등록되지 않은 카드만 필터링
-        // TODO: forSale일 땐 creator_id: userId인거로 검색해야함
         ...(forSale && { trade_info_id: null }),
       },
     },
