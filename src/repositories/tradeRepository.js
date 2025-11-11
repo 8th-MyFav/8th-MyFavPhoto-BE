@@ -32,6 +32,11 @@ async function findByCardId(id) {
           description: true,
         },
       },
+      requester: {
+        select: {
+          nickname: true,
+        },
+      },
       createdAt: true,
       updatedAt: true,
     },
