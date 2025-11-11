@@ -1,4 +1,5 @@
 import prisma from "../config/prisma.js";
+import { Prisma } from "@prisma/client";
 
 /**
  * 카드 ID로 userPhotocards 조회
@@ -342,6 +343,148 @@ async function findTradeHistoriesByRequesterId({ tx = prisma, requester_id }) {
   });
 }
 
+/**
+ * Raw Query를 사용해 내 판매/교환 목록의 전체 개수 조회
+ * @param {Object} options - 조회 옵션
+ * @return {Promise<number>} 필터링된 전체 목록의 개수
+ */
+async function countMyListingsByRawQuery({
+  userId,
+  offeredCardIds,
+}) {
+  const query = Prisma.sql`
+  SELECT COUNT(*)
+  FROM (
+    -- 판매 등록 카드 (포토카드 종류별로 1개씩)
+    SELECT DISTINCT ON (p.id)
+        upc.id,
+        p.grade,
+        p.genre,
+        p.name,
+        upc.owner_id,
+        'sell' AS "listingType"
+    FROM "UserPhotocards" upc
+    JOIN "Photocards" p ON upc.photocards_id = p.id
+    WHERE upc.trade_info_id IS NOT NULL
+      AND p.creator_id = ${userId}
+
+    UNION ALL
+
+    -- 교환 제안 카드 (제안 내역별로 1개씩)
+    SELECT 
+        upc.id,
+        p.grade,
+        p.genre,
+        p.name,
+        upc.owner_id,
+        'trade' AS "listingType"
+    FROM "TradeHistories" th
+    JOIN "UserPhotocards" upc ON th.offered_card_id = upc.id
+    JOIN "Photocards" p ON upc.photocards_id = p.id
+    WHERE th.requester_id = ${userId}
+      AND th.trade_status = 'PENDING'
+  ) AS listings
+  `;
+
+  const result = await prisma.$queryRaw(query);
+  return Number(result[0].count);
+}
+
+/**
+ * Raw Query를 사용해 내 판매/교환 목록의 등급별 개수 조회 (전체 기준)
+ * @param {Object} options - 조회 옵션
+ * @returns {Promise<object[]>} 등급별 개수 목록
+ */
+async function groupMyListingsByRawQuery({userId}) {
+  const query = Prisma.sql`
+    SELECT grade, COUNT(*) AS count
+    FROM (
+      -- 판매 등록 카드 (포토카드 종류별로 1개씩)
+      SELECT DISTINCT ON (p.id)
+        p.grade
+      FROM "UserPhotocards" upc
+      JOIN "Photocards" p ON upc.photocards_id = p.id
+      WHERE upc.trade_info_id IS NOT NULL
+        AND p.creator_id = ${userId}
+      
+      UNION ALL
+
+      -- 교환 제안 카드 (제안 내역별로 1개씩)
+      SELECT p.grade
+      FROM "TradeHistories" th
+      JOIN "UserPhotocards" upc ON th.offered_card_id = upc.id
+      JOIN "Photocards" P ON upc.photocards_id = p.id
+      WHERE th.requester_id = ${userId}
+        AND th.trade_status = 'PENDING'
+    ) AS listings
+    GROUP BY grade
+  `;
+
+  return prisma.$queryRaw(query);
+}
+
+/**
+ * Raw Query를 사용해 내 판매/교환 목록 조회
+ * @param {object} options - 조회 옵션
+ * @returns {Promise<object[]>} 필터링 및 페이지네이션된 목록
+ */
+async function findMyListingsByRawQuery({
+  userId,
+  offeredCardIds,
+  whereClauses,
+  orderBy,
+  page,
+  pageSize,
+}) {
+  const offset = (page - 1) * pageSize;
+
+  const query = Prisma.sql`
+    SELECT *
+    FROM (
+      -- 판매 등록 카드 (포토카드 종류별로 1개씩)
+      SELECT DISTINCT ON (p.id)
+          upc.id,
+          p.name,
+          p.grade,
+          p.genre,
+          p.image_url,
+          upc.owner_id,
+          upc."createdAt",
+          upc."updatedAt",
+          'sell' AS "listingType"
+      FROM "UserPhotocards" upc
+      JOIN "Photocards" p ON upc.photocards_id = p.id
+      WHERE upc.trade_info_id IS NOT NULL
+        AND p.creator_id = ${userId}
+
+      UNION ALL 
+
+      -- 교환 제안 카드 (제안 내역별로 1개씩)
+      SELECT 
+          upc.id,
+          p.name,
+          p.grade,
+          p.genre,
+          p.image_url,
+          upc.owner_id,
+          upc."createdAt",
+          upc."updatedAt",
+          'trade' AS "listingType"
+      FROM "TradeHistories" th
+      JOIN "UserPhotocards" upc ON th.offered_card_id = upc.id -- 근데 TradeHistories 테이블은 upc가 아니라 p에 연결되어 있는데.. 그럼 th.offered_card_is = p.id여야하는거 아냐?
+      JOIN "Photocards" p ON upc.photocards_id = p.id
+      WHERE th.requester_id = ${userId}
+        AND th.trade_status = 'PENDING'
+    ) AS listings
+    WHERE ${Prisma.join(whereClauses, "AND")}
+    ORDER BY ${Prisma.raw(orderBy)}
+    LIMIT ${pageSize}
+    OFFSET ${offset}
+  `;
+
+  return prisma.$queryRaw(query);
+}
+
 export default {
   findByCardId,
   findAvailable,
@@ -361,4 +504,7 @@ export default {
   countSoldByPostId,
   findTradeHistoriesByRequesterId,
   findUserPhotocardsByUserId,
+  countMyListingsByRawQuery,
+  groupMyListingsByRawQuery,
+  findMyListingsByRawQuery,
 };

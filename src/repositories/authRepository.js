@@ -29,6 +29,18 @@ async function findNickname(id) {
   return user?.nickname ?? null;
 }
 
+async function findNicknameWithTx(tx, id) {
+  const user = await tx.user.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      nickname: true,
+    },
+  });
+  return user?.nickname ?? null;
+}
+
 async function create(user) {
   return prisma.user.create({
     data: {
@@ -70,6 +82,7 @@ export default {
   findById,
   findByEmail,
   findNickname,
+  findNicknameWithTx,
   create,
   update,
   logout,

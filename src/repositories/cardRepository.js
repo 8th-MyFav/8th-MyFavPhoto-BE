@@ -64,35 +64,43 @@ async function findByUserId({
   forSale,
 }) {
   // 필터 추가
-  // Photocards 모델 기준, 나와 연결된(owner_id) UserPhotocards가 하나라도 있는 카드 조회
-  const where = {
+  // 마이갤러리는 카드 소유자가 나인 카드
+  // 판매 올릴 카드 목록은 카드 생성자도, 현재 소유자도 나고 판매 올리지도 않은 카드
+  const galleryWhere = {
     userPhotocards: {
       some: {
         owner_id: userId,
-        // forSale 파라미터가 존재할 경우, 아직 판매 등록되지 않은 카드만 필터링
-        ...(forSale && { trade_info_id: null }),
       },
     },
+  };
+  const where = {
+    ...galleryWhere,
     ...(grade && { grade }),
     ...(genre && { genre }),
+    ...(forSale && {
+      creator_id: userId,
+      userPhotocards: { some: { trade_info_id: null } },
+    }),
     ...(keyword && { name: { contains: keyword, mode: "insensitive" } }),
   };
 
-  // 3개의 DB 요청을 병렬 처리 (그래서 트챈잭션)
+  // 3개의 DB 요청을 병렬 처리 (데이터 정합성용)
   const [totalCount, gradeGroups, lists] = await prisma.$transaction([
     // 1. 필터링된 전체 개수 조회
-    prisma.photocards.count({ where }),
+    prisma.photocards.count({
+      where: galleryWhere,
+    }),
 
     // 2. 등급별 개수 조회 (DB에서 직접 그룹화)
     prisma.photocards.groupBy({
       by: ["grade"],
-      where,
+      where: galleryWhere,
       _count: {
         grade: true,
       },
     }),
 
-    // 3. 페이지네이션된 목록 조회
+    // 3. 목록 조회
     prisma.photocards.findMany({
       where,
       skip: (page - 1) * pageSize,
@@ -130,7 +138,7 @@ async function findByUserId({
     grade: item.grade,
     genre: item.genre,
     price: item.price,
-    // total_issued: item.total_issued, 
+    // total_issued: item.total_issued,
     count: item._count.userPhotocards, // 사용자가 보유한 실제 카드 수량
     image_url: item.image_url,
     createdAt: item.createdAt,

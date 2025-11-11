@@ -61,7 +61,7 @@ async function purchaseCard({ userId, tradePostId, count }) {
 
     // 구매 로직
 
-    // 1. 구매할 userPhotocard ids get
+    // 1. 구매할 userPhotocard 카드 정보와 id 한번에 get
     const availableCards = await tx.userPhotocards.findMany({
       where: { trade_info_id: tradePostId, is_sale: true },
       orderBy: { id: "asc" },
@@ -120,7 +120,7 @@ async function purchaseCard({ userId, tradePostId, count }) {
     const sellerId = targetCard.creator.id; // 판매자(카드생성자)
 
     // 각각 닉네임
-    const buyerNickname = await authRepository.findNickname(userId);
+    const buyerNickname = await authRepository.findNicknameWithTx(tx, userId);
     // 각각 알림 내용
     const buyMessage = `[${targetCard.grade}|${targetCard.name}] ${count}장을 성공적으로 구매했습니다.`;
     const soldMessage = `${buyerNickname}님이 [${targetCard.grade}|${targetCard.name}]을 ${count}장 구매했습니다.`;
