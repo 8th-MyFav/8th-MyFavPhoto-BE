@@ -183,6 +183,3 @@ export default {
   findByCardId,
   findCardByCardId,
 };
-
-// 승인/거절 => 테이블
-// 마켓 카드 구매하기
