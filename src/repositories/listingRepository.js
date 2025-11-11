@@ -348,10 +348,7 @@ async function findTradeHistoriesByRequesterId({ tx = prisma, requester_id }) {
  * @param {Object} options - 조회 옵션
  * @return {Promise<number>} 필터링된 전체 목록의 개수
  */
-async function countMyListingsByRawQuery({
-  userId,
-  offeredCardIds,
-}) {
+function countMyListingsByRawQuery({ userId }) {
   const query = Prisma.sql`
   SELECT COUNT(*)
   FROM (
@@ -386,8 +383,7 @@ async function countMyListingsByRawQuery({
   ) AS listings
   `;
 
-  const result = await prisma.$queryRaw(query);
-  return Number(result[0].count);
+  return prisma.$queryRaw(query);
 }
 
 /**
@@ -395,7 +391,7 @@ async function countMyListingsByRawQuery({
  * @param {Object} options - 조회 옵션
  * @returns {Promise<object[]>} 등급별 개수 목록
  */
-async function groupMyListingsByRawQuery({userId}) {
+function groupMyListingsByRawQuery({ userId }) {
   const query = Prisma.sql`
     SELECT grade, COUNT(*) AS count
     FROM (
@@ -428,9 +424,8 @@ async function groupMyListingsByRawQuery({userId}) {
  * @param {object} options - 조회 옵션
  * @returns {Promise<object[]>} 필터링 및 페이지네이션된 목록
  */
-async function findMyListingsByRawQuery({
+function findMyListingsByRawQuery({
   userId,
-  offeredCardIds,
   whereClauses,
   orderBy,
   page,

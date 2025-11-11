@@ -418,7 +418,7 @@ async function getMyListings({
   const orderBy = `"createdAt" DESC`; // Raw Query는 문자열로 처리
 
   // 4. 3개의 DB 요청을 병렬로 처리 (totalCount, totalGrades, list)
-  const [totalCount, gradeGroups, myListings] = await prisma.$transaction([
+  const [totalCountResult, gradeGroups, myListings] = await prisma.$transaction([ // Promise 배열 반환
     // 4-1. 전체 개수 조회 (필터 X)
     listingRepository.countMyListingsByRawQuery({ userId }),
 
@@ -434,6 +434,9 @@ async function getMyListings({
       pageSize,
     }),
   ]);
+
+  const totalCount =
+    totalCountResult.length > 0 ? Number(totalCountResult[0].count) : 0;
 
   // 5. 등급별 개수 결과 포맷팅
   const totalGrades = Object.fromEntries(
