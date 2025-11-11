@@ -8,7 +8,7 @@ import * as errors from "../utils/errors.js"; // NOTE: 일단 errors.메서드()
  * @param {object} cardData - 생성할 카드 데이터
  * @returns {Promise<object>} 생성된 카드 정보
  */
-async function createCard(userId, cardData) {
+async function createCard(userId, cardData, url, key) {
   if (
     !cardData.name ||
     !cardData.grade ||
@@ -19,7 +19,7 @@ async function createCard(userId, cardData) {
     throw errors.invalidData();
   }
 
-  const createdCard = await cardRepository.create(userId, cardData);
+  const createdCard = await cardRepository.create(userId, cardData, url);
   return createdCard;
 }
 
