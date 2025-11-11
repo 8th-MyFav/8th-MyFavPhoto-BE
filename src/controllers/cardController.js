@@ -1,4 +1,5 @@
 import cardService from "../services/cardService.js";
+import { uploadImageToS3 } from "../services/uploadService.js";
 import * as errors from "../utils/errors.js";
 
 /**
@@ -11,11 +12,19 @@ export async function createCard(req, res, next) {
   try {
     const { userId } = req.auth;
     const cardData = req.body;
+    const file = req.file;
 
     if (!cardData || Object.keys(cardData).length === 0)
       throw errors.invalidData("body가 비어있습니다.");
 
-    const card = await cardService.createCard(userId, cardData);
+    // 파일 업로드 확인
+    if (!file) {
+      throw errors.invalidFile();
+    }
+
+    const { url, key } = await uploadImageToS3(file);
+
+    const card = await cardService.createCard(userId, cardData, url, key);
     return res.status(201).json(card);
   } catch (error) {
     next(error);

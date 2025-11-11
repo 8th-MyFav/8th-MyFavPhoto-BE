@@ -41,6 +41,13 @@ export function validationError(message = "입력 값이 올바르지 않습니�
   return createError(400, "VALIDATION_ERROR", message);
 }
 
+// 파일 누락 오류
+export function invalidFile(
+  message = "이미지 파일이 누락되었습니다."
+) {
+  return createError(400, "INVALID_FILE", message);
+}
+
 /* ===========================
    🚫 401 Unauthorized 계열
 =========================== */
