@@ -41,6 +41,10 @@ export function validationError(message = "입력 값이 올바르지 않습니�
   return createError(400, "VALIDATION_ERROR", message);
 }
 
+export function invalidFile(message = "파일이 업로드되지 않았습니다.") {
+  return createError(400, "INVALID_FILE", message);
+}
+
 /* ===========================
    🚫 401 Unauthorized 계열
 =========================== */

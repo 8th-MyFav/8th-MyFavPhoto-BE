@@ -21,7 +21,7 @@ import * as errors from "../utils/errors.js"; // NOTE: 일단 errors.메서드()
  * @returns {Promise<Object>} - 생성된 photocard와 userPhotocard 정보
  * TODO: 필드의 타입/범위까지 체크할 것
  */
-async function createCard(userId, cardData) {
+async function createCard(userId, cardData, url, key) {
   if (
     !cardData.name ||
     !cardData.grade ||
@@ -39,8 +39,13 @@ async function createCard(userId, cardData) {
     // NOTE: next()는 controller, middleware 내부. service, repository 내부는 throw error
   }
 
-  const createdCard = await cardRepository.create(userId, cardData);
-  return createdCard;
+  const createdCard = await cardRepository.create(userId, cardData, key);
+
+  const responseCard = {
+    ...createdCard, // createdCard의 모든 속성을 복사
+    image_url: url, // image_url 속성만 새로운 URL로 덮어쓰기
+  };
+  return responseCard;
 }
 
 async function getMyCards({
