@@ -35,7 +35,7 @@ import prisma from "../config/prisma.js";
  *   image_url: "https://example.com/card.jpg"
  * }, 1);
  */
-async function create(userId, cardData, key) {
+async function create(userId, cardData, url) {
   // tx: 트랜잭션 내에 사용하는 클라이언트 인스턴스
   const result = await prisma.$transaction(async (tx) => {
     // NOTE: Photocards 테이블에 데이터 추기
@@ -49,7 +49,7 @@ async function create(userId, cardData, key) {
         price: parseInt(cardData.price),
         total_issued: parseInt(cardData.total_issued),
         description: cardData.description,
-        image_url: key,
+        image_url: url,
       },
     });
 

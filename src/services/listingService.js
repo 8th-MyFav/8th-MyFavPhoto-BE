@@ -1,9 +1,13 @@
-import { Genre, Grade } from "@prisma/client";
+import { Genre, Grade, Prisma } from "@prisma/client";
 import prisma from "../config/prisma.js";
 import listingRepository from "../repositories/listingRepository.js";
 import * as errors from "../utils/errors.js";
 
-// NOTE: 거래 게시글 생성
+/**
+ * 판매 게시글 생성
+ * @param {object} listingData - 생성할 게시글 데이터
+ * @returns {Promise<object>} 생성된 게시글 정보
+ */
 async function createListing({
   cardId,
   total_count,
@@ -38,9 +42,10 @@ async function createListing({
       cardId,
       total_count,
     });
-    if (targets.length === 0) throw errors.validationError("판매할 수 있는 카드가 없습니다.");
+    if (targets.length === 0)
+      throw errors.validationError("판매할 수 있는 카드가 없습니다.");
     const ids = targets.map((target) => target.id);
-// 먼저 이 카드에 post id 가 있는지 검증해야됨. 이미 판매 올라간 카드일 수도 있으니까..
+    // 먼저 이 카드에 post id 가 있는지 검증해야됨. 이미 판매 올라간 카드일 수도 있으니까..
     // 2. tradePosts 테이블에 trade Post 생성
     // photocard cardid로 price 접근해서 price 변수에 할당
     const { price: priceValue } = await prisma.photocards.findUnique({
@@ -84,6 +89,11 @@ async function createListing({
   return createdListing;
 }
 
+/**
+ * 판매 게시글 수정
+ * @param {object} listingData - 수정할 게시글 데이터
+ * @returns {Promise<object>} 수정된 게시글 정보
+ */
 async function updateListing(listingData) {
   const updatedListing = await prisma.$transaction(async (tx) => {
     const { cardId, price, total_count, trade_grade, trade_genre, trade_note } =
@@ -170,6 +180,11 @@ async function updateListing(listingData) {
   return updatedListing;
 }
 
+/**
+ * 판매 게시글 삭제
+ * @param {number} cardId - 포토카드 ID
+ * @returns {Promise<object>} 삭제 완료 메시지
+ */
 async function removeListing(cardId) {
   const removedListing = await prisma.$transaction(async (tx) => {
     if (!cardId) throw errors.invalidData("유효하지 않은 카드 id입니다");
@@ -179,15 +194,21 @@ async function removeListing(cardId) {
     if (!targets.length) throw errors.invalidData("판매 중인 카드가 없습니다.");
     const ids = targets.map((target) => target.id);
 
-    // 2. 해당 데이터의 is_sale false로 변경
-    const update = await listingRepository.resetSaleStatus({ tx, ids });
-
-    // 3. tradePosts 테이블 데이터 삭제
+    // 2. tradePosts 테이블 데이터 id 조회
     const tradePostId = await listingRepository.findTradePostIdByCardId({
       tx,
       cardId,
     });
-    const remove = await listingRepository.deleteTradePost({ tx, tradePostId });
+
+    // 잠재적 에러 (tradePostId 없는 경우)
+    if (!tradePostId)
+      throw errors.cardAlreadySold("판매 취소 중 카드가 모두 판매되었습니다.");
+
+    // 3. 해당 데이터의 is_sale false로 변경
+    const update = await listingRepository.resetSaleStatus({ tx, ids });
+
+    // 4. tradePosts 테이블 데이터 삭제
+    await listingRepository.deleteTradePost({ tx, tradePostId });
 
     return {
       message: "판매 취소 완료",
@@ -196,6 +217,12 @@ async function removeListing(cardId) {
   return removedListing;
 }
 
+/**
+ * 판매 게시글 상세 조회
+ * @param {object} options - 조회 옵션
+ * @param {number} options.postId - 포스트 ID
+ * @returns {Promise<object>} 게시글 상세 정보
+ */
 async function getListingDetail({ postId }) {
   const listingDetail = await listingRepository.findByPostId({ postId });
   if (!listingDetail) {
@@ -230,6 +257,11 @@ async function getListingDetail({ postId }) {
   return formatted;
 }
 
+/**
+ * 마켓 판매 게시글 목록 조회
+ * @param {object} options - 조회 옵션
+ * @returns {Promise<object>} 게시글 목록, 다음 커서, 추가 데이터 여부
+ */
 async function getMarketListings({
   take = 18,
   cursor,
@@ -307,7 +339,7 @@ async function getMarketListings({
   });
 
   // hasMore 계산 및 응답 목록 슬라이싱
-  const hasMore = lists.length > take; 
+  const hasMore = lists.length > take;
   const responseLists = hasMore ? lists.slice(0, take) : lists;
   const nextCursor = responseLists.length
     ? responseLists[responseLists.length - 1].id
@@ -344,6 +376,11 @@ async function getMarketListings({
   };
 }
 
+/**
+ * 내 판매 포토카드 (판매/교환) 목록 조회
+ * @param {object} options - 조회 옵션
+ * @returns {Promise<object>} 내 판매/교환 내역 목록 및 페이지 정보
+ */
 async function getMyListings({
   userId,
   page,
@@ -354,105 +391,82 @@ async function getMyListings({
   saleType,
   isSoldOut,
 }) {
-  // grade, genre 검증
+  // 1. 파라미터 검증
   if (grade && !Object.values(Grade).includes(grade))
     throw errors.invalidQuery("유효하지 않은 등급입니다.");
   if (genre && !Object.values(Genre).includes(genre))
     throw errors.invalidQuery("유효하지 않은 장르입니다.");
-
-  // keyword 검증 (controller에서 했는데 service level에서도 할게 있나?)
-
-  // saleType 검증
   if (saleType && saleType !== "sell" && saleType !== "trade")
     throw errors.invalidQuery("유효하지 않은 saleType입니다.");
 
-  // saleType에 따른 필터링 처리
-  const tradeHistories =
-    await listingRepository.findTradeHistoriesByRequesterId({
-      requester_id: userId,
-    });
-  const offeredCardIds = tradeHistories.map((th) => th.offered_card_id);
+  // 2. WHERE 절 동적 생성
+  const whereClauses = [Prisma.sql`1=1`]; // AND로만 연결할 수 있도록 하는 항상 참인 기본 조건
 
-  let saleTypeFilter = {};
-  if (saleType === "sell") {
-    // trade_info_id가 null이 아닌 행만
-    saleTypeFilter = { trade_info_id: { not: null } };
-  } else if (saleType === "trade") {
-    if (offeredCardIds.length > 0) {
-      // offeredCardIds에 있는 id에 해당하는 행만
-      saleTypeFilter = { photocards_id: { in: offeredCardIds } };
-    } else {
-      // 교환 제시한 카드가 없으면 빈 결과 반환
-      saleTypeFilter = { photocards_id: { in: [] } };
-    }
+  if (grade) whereClauses.push(Prisma.sql`grade = ${grade}::"Grade"`);
+  if (genre) whereClauses.push(Prisma.sql`genre = ${genre}::"Genre"`);
+  if (keyword) whereClauses.push(Prisma.sql`name ILIKE ${"%" + keyword + "%"}`);
+  if (saleType) whereClauses.push(Prisma.sql`"listingType" = ${saleType}`);
+
+  // isSoldOut은 boolean 값으로 컨트롤러에서 변환되어 넘어온다고 가정
+  if (isSoldOut === true) {
+    whereClauses.push(Prisma.sql`owner_id != ${userId}`); // 품절된 카드
+  } else if (isSoldOut === false) {
+    whereClauses.push(Prisma.sql`owner_id = ${userId}`); // 판매/교환 가능한 카드
   }
 
-  // isSoldOut에 따른 필터링 처리
-  let isSoldOutFilter = {};
-  if (isSoldOut) {
-    // 품절
-    isSoldOutFilter = { owner_id: { not: userId } };
-  } else {
-    // 품절제외
-    isSoldOutFilter = { owner_id: userId };
-  }
+  // 3. 정렬 조건 설정
+  const orderBy = `"createdAt" DESC`; // Raw Query는 문자열로 처리
 
-  const where = {
-    photocard: {
-      creator_id: userId,
-      ...(grade && { grade }),
-      ...(genre && { genre }),
-      ...(keyword && {
-        name: { contains: keyword, mode: "insensitive" },
-      }),
-    },
-    OR: [
-      { trade_info_id: { not: null } },
-      { photocards_id: { in: offeredCardIds } }, // photocards_id가 offeredIds id에 해당되는 행만
-    ],
-    ...(Object.keys(saleTypeFilter).length > 0 && saleTypeFilter),
-    ...(Object.keys(isSoldOutFilter).length > 0 && isSoldOutFilter),
-  };
+  // 4. 3개의 DB 요청을 병렬로 처리 (totalCount, totalGrades, list)
+  const [totalCountResult, gradeGroups, myListings] = await prisma.$transaction([ // Promise 배열 반환
+    // 4-1. 전체 개수 조회 (필터 X)
+    listingRepository.countMyListingsByRawQuery({ userId }),
 
-  const myListings = await listingRepository.findUserPhotocardsByUserId({
-    where,
-    page,
-    pageSize,
+    // 4-2. 등급별 개수 조회 (필터 X)
+    listingRepository.groupMyListingsByRawQuery({ userId }),
+
+    // 4-3. 실제 목록 조회 (필터 O, 페이지네이션 O)
+    listingRepository.findMyListingsByRawQuery({
+      userId,
+      whereClauses,
+      orderBy,
+      page,
+      pageSize,
+    }),
+  ]);
+
+  const totalCount =
+    totalCountResult.length > 0 ? Number(totalCountResult[0].count) : 0;
+
+  // 5. 등급별 개수 결과 포맷팅
+  const totalGrades = Object.fromEntries(
+    Object.values(Grade).map((g) => [g, 0])
+  );
+  gradeGroups.forEach((group) => {
+    // BigInt를 숫자로 변환
+    totalGrades[group.grade] = Number(group.count);
   });
 
-  // 전체 개수
-  const totalCount = await prisma.userPhotocards.count({
-    where: { owner_id: userId },
-  });
-
-  // 등급 기본값 초기화 (groupBy 관계 필드 지원XX) -> join 수행, 각 userPC별 등급 접근 -> count
-  const gradeCounts = Object.fromEntries(
-    Object.values(Grade).map((grade) => [grade, 0])
-  ); // TODO: 추후 내 판매 카드 목록과 함수 공통화
-
-  // 등급별 개수 계산
-  const gradeData = await prisma.userPhotocards.findMany({
-    where,
-    select: { photocard: { select: { grade: true } } },
-  });
-  gradeData.forEach(({ photocard }) => (gradeCounts[photocard.grade] += 1));
-
+  // 6. 최종 목록 결과 포맷팅
   const list = myListings.map((listing) => ({
-    id: listing.id,
-    name: listing.photocard.name,
-    grade: listing.photocard.grade,
-    genre: listing.photocard.genre,
-    available: listing.owner_id === userId ? 1 : 0,
-    image_url: listing.photocard.image_url,
+    id: listing.id, // UserPhotocards의 id
+    name: listing.name,
+    grade: listing.grade,
+    genre: listing.genre,
+    available: listing.owner_id === userId ? 1 : 0, // 판매/교환 가능 여부
+    image_url: listing.image_url,
     createdAt: listing.createdAt,
     updatedAt: listing.updatedAt,
+    listingType: listing.listingType, // 'sell' 또는 'trade'
   }));
+
+  // 7. 최종 응답 객체 반환
   return {
-    totalCount: myListings.length,
-    totalGrades: gradeCounts,
+    totalCount,
+    totalGrades,
     page,
     pageSize,
-    totalPage: Math.ceil(myListings.length / pageSize),
+    totalPage: Math.ceil(totalCount / pageSize), // 올바른 페이지 수 계산
     list,
   };
 }

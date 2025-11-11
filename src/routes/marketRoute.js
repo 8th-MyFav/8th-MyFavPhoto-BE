@@ -29,11 +29,7 @@ marketRouter.post(
 );
 
 // NOTE: 교환 제시 목록 조회 api
-marketRouter.get(
-  "/trades/:cardId",
-  authMiddleware.verifyParamsCardAuth,
-  getOfferedTradesHistory
-);
+marketRouter.get("/trades/:cardId", getOfferedTradesHistory);
 // NOTE: 교환 제시 승인
 marketRouter.patch(
   "/trades/:tradeId/approve",
@@ -41,11 +37,7 @@ marketRouter.patch(
   approveTrade
 );
 // NOTE: 교환 제시 거절
-marketRouter.patch(
-  "/trades/:tradeId/reject",
-  authMiddleware.verifyTradeAuth,
-  rejectTrade
-);
+marketRouter.patch("/trades/:tradeId/reject", rejectTrade);
 
 // NOTE: 카드 구매
 marketRouter.post(
@@ -83,10 +75,10 @@ listingRouter
     removeListing
   );
 
-  // NOTE: /market/listings/me
-  listingRouter.route("/me").get(authMiddleware.verifyAccessToken, getMyListings);
-  
-  // NOTE: /market/listings/:postId
-  listingRouter.route("/:postId").get(getListingDetail);
-  
+// NOTE: /market/listings/me
+listingRouter.route("/me").get(authMiddleware.verifyAccessToken, getMyListings);
+
+// NOTE: /market/listings/:postId
+listingRouter.route("/:postId").get(getListingDetail);
+
 export default marketRouter;

@@ -3,23 +3,10 @@ import cardRepository from "../repositories/cardRepository.js";
 import * as errors from "../utils/errors.js"; // NOTE: 일단 errors.메서드()로 사용. 필요시 변경
 
 /**
- * 카드 생성 Service
- *
- * @param {number} userId - 카드 생성 요청을 한 사용자 ID
- * @param {Object} cardData - 카드 생성 정보
- * @param {string} cardData.name - 카드 이름
- * @param {string} cardData.grade - 카드 등급 (COMMON, RARE, SUPER_RARE, LEGENDARY)
- * @param {string} cardData.genre - 카드 장르 (KPOP, ACTOR, ESPORTS 등)
- * @param {number} cardData.price - 카드 가격
- * @param {number} cardData.total_issued - 카드 총 발행량
- * @param {string} [cardData.description] - 카드 설명
- * @param {string} [cardData.image_url] - 카드 이미지 URL
- *
- * @throws {Error} - userId가 없을 경우 UNAUTHORIZED 에러
- * @throws {Error} - 필수 필드 누락 시 INVALID_DATA 에러
- *
- * @returns {Promise<Object>} - 생성된 photocard와 userPhotocard 정보
- * TODO: 필드의 타입/범위까지 체크할 것
+ * 카드 생성
+ * @param {number} userId - 사용자 ID
+ * @param {object} cardData - 생성할 카드 데이터
+ * @returns {Promise<object>} 생성된 카드 정보
  */
 async function createCard(userId, cardData, url, key) {
   if (
@@ -29,25 +16,26 @@ async function createCard(userId, cardData, url, key) {
     !cardData.price ||
     !cardData.total_issued
   ) {
-    const error = new Error("INVALID_DATA");
-    error.code = 422;
-    error.data = {
-      errorCode: "INVALID_DATA",
-      message: "필수 필드 누락 또는 유효하지 않은 값입니다.",
-    };
-    throw error;
-    // NOTE: next()는 controller, middleware 내부. service, repository 내부는 throw error
+    throw errors.invalidData();
   }
 
-  const createdCard = await cardRepository.create(userId, cardData, key);
+  const createdCard = await cardRepository.create(userId, cardData, url);
 
-  const responseCard = {
-    ...createdCard, // createdCard의 모든 속성을 복사
-    image_url: url, // image_url 속성만 새로운 URL로 덮어쓰기
-  };
-  return responseCard;
+  return createdCard;
 }
 
+/**
+ * 내 카드 목록 조회
+ * @param {object} options - 조회 옵션
+ * @param {number} options.userId - 사용자 ID
+ * @param {number} options.page - 페이지 번호
+ * @param {number} options.pageSize - 페이지 크기
+ * @param {string} [options.grade] - 등급 필터
+ * @param {string} [options.genre] - 장르 필터
+ * @param {string} [options.keyword] - 키워드 검색
+ * @param {boolean} [options.forSale] - 판매 등록 가능한 카드만 조회할지 여부
+ * @returns {Promise<object>} 카드 목록 및 페이지 정보
+ */
 async function getMyCards({
   userId,
   page,
@@ -79,6 +67,13 @@ async function getMyCards({
   return myCards;
 }
 
+/**
+ * 내 카드 상세 정보 조회
+ * @param {object} options - 조회 옵션
+ * @param {number} options.userId - 사용자 ID
+ * @param {number} options.cardId - 카드 ID
+ * @returns {Promise<object>} 카드 상세 정보
+ */
 async function getMyCardDetail({ userId, cardId }) {
   if (!cardId) throw errors.invalidData("card id가 전달되지 않았습니다.");
 

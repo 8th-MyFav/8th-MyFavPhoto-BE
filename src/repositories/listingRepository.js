@@ -1,15 +1,27 @@
 import prisma from "../config/prisma.js";
+import { Prisma } from "@prisma/client";
 
-/* create listing */
-
-// NOTE: userPhotocards 조회
+/**
+ * 카드 ID로 userPhotocards 조회
+ * @param {object} options - 조회 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number} options.cardId - 포토카드 ID
+ * @returns {Promise<object[]>}
+ */
 async function findByCardId({ tx = prisma, cardId }) {
   return tx.userPhotocards.findMany({
     where: { photocards_id: cardId },
   });
 }
 
-// NOTE: 판매할 userPhotocards Id 조회 + 개수제한
+/**
+ * 판매 가능한 userPhotocards 조회
+ * @param {object} options - 조회 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number} options.cardId - 포토카드 ID
+ * @param {number} options.total_count - 조회할 개수
+ * @returns {Promise<object[]>}
+ */
 async function findAvailable({ tx = prisma, cardId, total_count }) {
   return tx.userPhotocards.findMany({
     where: { photocards_id: cardId, is_sale: false },
@@ -18,7 +30,17 @@ async function findAvailable({ tx = prisma, cardId, total_count }) {
   });
 }
 
-// NOTE: 거래 포스트 생성
+/**
+ * 거래 포스트 생성
+ * @param {object} options - 생성 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {string} options.trade_grade - 교환 희망 등급
+ * @param {string} options.trade_genre - 교환 희망 장르
+ * @param {string} options.trade_note - 교환 희망 노트
+ * @param {number} options.price - 가격
+ * @param {number} options.total_count - 총 수량
+ * @returns {Promise<object>}
+ */
 async function createTradePost({
   tx = prisma,
   trade_grade,
@@ -38,7 +60,14 @@ async function createTradePost({
   });
 }
 
-// NOTE: userPhotocards 판매 상태 변경 + 거래글과 연결
+/**
+ * userPhotocards의 판매 상태를 true로 변경하고 거래 정보 ID를 연결
+ * @param {object} options - 업데이트 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number[]} options.ids - userPhotocard ID 배열
+ * @param {number} options.trade_info_id - 거래 정보 ID
+ * @returns {Promise<object>}
+ */
 async function linkTradeInfo({ tx = prisma, ids, trade_info_id }) {
   return tx.userPhotocards.updateMany({
     where: {
@@ -48,7 +77,13 @@ async function linkTradeInfo({ tx = prisma, ids, trade_info_id }) {
   });
 }
 
-// NOTE: userPhotocards 판매 상태 false
+/**
+ * userPhotocards의 판매 상태를 false로 변경
+ * @param {object} options - 업데이트 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number[]} options.ids - userPhotocard ID 배열
+ * @returns {Promise<object>}
+ */
 async function resetSaleStatus({ tx = prisma, ids }) {
   return tx.userPhotocards.updateMany({
     where: {
@@ -58,14 +93,24 @@ async function resetSaleStatus({ tx = prisma, ids }) {
   });
 }
 
-/* update listing */
-
-// NOTE: photocards 개수 세기
+/**
+ * 카드 ID로 photocards 개수 조회
+ * @param {object} options - 조회 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number} options.cardId - 포토카드 ID
+ * @returns {Promise<number>}
+ */
 async function countByCardId({ tx = prisma, cardId }) {
   return tx.photocards.count({ where: { id: cardId } });
 }
 
-// NOTE: 특정 userPhotocards 조회
+/**
+ * 카드 ID로 특정 userPhotocards 조회
+ * @param {object} options - 조회 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number} options.cardId - 포토카드 ID
+ * @returns {Promise<object[]>}
+ */
 async function findUserPhotocardsByCardId({ tx = prisma, cardId }) {
   return tx.userPhotocards.findMany({
     where: { photocards_id: cardId },
@@ -74,7 +119,13 @@ async function findUserPhotocardsByCardId({ tx = prisma, cardId }) {
   });
 }
 
-// NOTE: 특정 userPhotocards 판매 상태 true
+/**
+ * 특정 userPhotocards의 판매 상태를 true로 변경
+ * @param {object} options - 업데이트 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number[]} options.ids - userPhotocard ID 배열
+ * @returns {Promise<object>}
+ */
 async function setSaleStatus({ tx = prisma, ids }) {
   return tx.userPhotocards.updateMany({
     where: { id: { in: ids } },
@@ -82,7 +133,14 @@ async function setSaleStatus({ tx = prisma, ids }) {
   });
 }
 
-// NOTE: tradePosts 테이블 가격 수정 (genre, grade 고정)
+/**
+ * tradePosts 테이블의 가격 수정
+ * @param {object} options - 업데이트 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number} options.tradePostId - 거래 포스트 ID
+ * @param {number} options.price - 수정할 가격
+ * @returns {Promise<object>}
+ */
 async function updateTradePrice({ tx = prisma, tradePostId, price }) {
   return tx.tradePosts.update({
     where: { id: tradePostId },
@@ -90,7 +148,13 @@ async function updateTradePrice({ tx = prisma, tradePostId, price }) {
   });
 }
 
-// NOTE: trade post id 조회 (userPhotocards 경유)
+/**
+ * 카드 ID를 통해 trade post ID 조회
+ * @param {object} options - 조회 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number} options.cardId - 포토카드 ID
+ * @returns {Promise<number|null>}
+ */
 async function findTradePostIdByCardId({ tx = prisma, cardId }) {
   const result = await tx.userPhotocards.findFirst({
     where: { photocards_id: cardId, is_sale: true },
@@ -101,7 +165,16 @@ async function findTradePostIdByCardId({ tx = prisma, cardId }) {
   return result?.tradePost?.id ?? null;
 }
 
-// NOTE: trade post 수정
+/**
+ * trade post 수정
+ * @param {object} options - 업데이트 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number} options.id - 거래 포스트 ID
+ * @param {string} [options.trade_grade] - 교환 희망 등급
+ * @param {string} [options.trade_genre] - 교환 희망 장르
+ * @param {string} [options.trade_note] - 교환 희망 노트
+ * @returns {Promise<object>}
+ */
 async function updateTradePost({
   tx = prisma,
   id,
@@ -119,19 +192,13 @@ async function updateTradePost({
   });
 }
 
-// NOTE: trade post id로 잠금 설정
-// async function findAndLockTradePostById({ tx = prisma, id }) {
-//   return tx.tradePosts
-//     .findUniqueOrThrow({
-//       // 테이블에서 id 일치하는 당일 행 조회
-//       where: { id },
-//     })
-//     .forUpdate(); // 행 수준 잠금 (다른 트랜잭션에서 수정/삭제 금지)
-// }
-// 에러 확인으로 잠시 주석 처리
-
-/* delete listing */
-
+/**
+ * 판매 중인 userPhotocards 조회
+ * @param {object} options - 조회 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number} options.cardId - 포토카드 ID
+ * @returns {Promise<object[]>}
+ */
 async function findStatusTrue({ tx = prisma, cardId }) {
   return tx.userPhotocards.findMany({
     where: { photocards_id: cardId, is_sale: true },
@@ -139,14 +206,28 @@ async function findStatusTrue({ tx = prisma, cardId }) {
   });
 }
 
+/**
+ * 거래 포스트 삭제
+ * @param {object} options - 삭제 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number} options.tradePostId - 거래 포스트 ID
+ * @returns {Promise<object>}
+ */
 async function deleteTradePost({ tx = prisma, tradePostId }) {
   return tx.tradePosts.delete({
     where: { id: tradePostId },
   });
 }
 
-/* get market listings */
-
+/**
+ * 모든 거래 포스트 목록 조회 (마켓)
+ * @param {object} options - 조회 옵션
+ * @param {object} options.where - Prisma where 절
+ * @param {number} options.take - 조회할 개수
+ * @param {number} [options.cursor] - 커서 ID
+ * @param {object} options.orderBy - Prisma orderBy 절
+ * @returns {Promise<object[]>}
+ */
 async function findAll({ where, take, cursor, orderBy }) {
   return prisma.tradePosts.findMany({
     where,
@@ -176,14 +257,19 @@ async function findAll({ where, take, cursor, orderBy }) {
   });
 }
 
-/* market listing detail */
-
+/**
+ * 포스트 ID로 거래 포스트 상세 정보 조회
+ * @param {object} options - 조회 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number} options.postId - 포스트 ID
+ * @returns {Promise<object|null>}
+ */
 async function findByPostId({ tx = prisma, postId }) {
   return tx.tradePosts.findUnique({
     where: { id: postId },
     include: {
       UserPhotocards: {
-        where: { is_sale: true },
+        // where: { is_sale: true }, // FIX: 만약 판매 게시글의 모든 userPhotocard가 판매 완료되면 listindDetail.UserPhotocards가 비어 접근 불가능함,, 그래서 카드 판매 상태와 상관없이 userPhotocards를 가져올 수 있도록 get
         take: 1,
         select: {
           photocard: {
@@ -205,12 +291,28 @@ async function findByPostId({ tx = prisma, postId }) {
   });
 }
 
+/**
+ * 포스트 ID로 판매된 카드 개수 조회
+ * @param {object} options - 조회 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number} options.postId - 포스트 ID
+ * @returns {Promise<number>}
+ */
 async function countSoldByPostId({ tx = prisma, postId }) {
   return tx.userPhotocards.count({
     where: { trade_info_id: postId, is_sale: false },
   });
 }
 
+/**
+ * 사용자 ID로 userPhotocards 목록 조회 (내 판매/교환 내역)
+ * @param {object} options - 조회 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {object} options.where - Prisma where 절
+ * @param {number} options.page - 페이지 번호
+ * @param {number} options.pageSize - 페이지 크기
+ * @returns {Promise<object[]>}
+ */
 async function findUserPhotocardsByUserId({
   tx = prisma,
   where,
@@ -227,12 +329,155 @@ async function findUserPhotocardsByUserId({
   });
 }
 
-// NOTE: 새로 만든 DB접근함수!! requester_id로 TradeHistories 조회하여 offered_card_id 배열 반환
+/**
+ * 요청자 ID로 TradeHistories 조회하여 offered_card_id 배열 반환
+ * @param {object} options - 조회 옵션
+ * @param {object} [options.tx=prisma] - Prisma 트랜잭션 클라이언트
+ * @param {number} options.requester_id - 요청자 ID
+ * @returns {Promise<object[]>}
+ */
 async function findTradeHistoriesByRequesterId({ tx = prisma, requester_id }) {
   return tx.tradeHistories.findMany({
     where: { requester_id, trade_status: "PENDING" },
     select: { offered_card_id: true },
   });
+}
+
+/**
+ * Raw Query를 사용해 내 판매/교환 목록의 전체 개수 조회
+ * @param {Object} options - 조회 옵션
+ * @return {Promise<number>} 필터링된 전체 목록의 개수
+ */
+function countMyListingsByRawQuery({ userId }) {
+  const query = Prisma.sql`
+  SELECT COUNT(*)
+  FROM (
+    -- 판매 등록 카드 (포토카드 종류별로 1개씩)
+    SELECT DISTINCT ON (p.id)
+        upc.id,
+        p.grade,
+        p.genre,
+        p.name,
+        upc.owner_id,
+        'sell' AS "listingType"
+    FROM "UserPhotocards" upc
+    JOIN "Photocards" p ON upc.photocards_id = p.id
+    WHERE upc.trade_info_id IS NOT NULL
+      AND p.creator_id = ${userId}
+
+    UNION ALL
+
+    -- 교환 제안 카드 (제안 내역별로 1개씩)
+    SELECT 
+        upc.id,
+        p.grade,
+        p.genre,
+        p.name,
+        upc.owner_id,
+        'trade' AS "listingType"
+    FROM "TradeHistories" th
+    JOIN "UserPhotocards" upc ON th.offered_card_id = upc.id
+    JOIN "Photocards" p ON upc.photocards_id = p.id
+    WHERE th.requester_id = ${userId}
+      AND th.trade_status = 'PENDING'
+  ) AS listings
+  `;
+
+  return prisma.$queryRaw(query);
+}
+
+/**
+ * Raw Query를 사용해 내 판매/교환 목록의 등급별 개수 조회 (전체 기준)
+ * @param {Object} options - 조회 옵션
+ * @returns {Promise<object[]>} 등급별 개수 목록
+ */
+function groupMyListingsByRawQuery({ userId }) {
+  const query = Prisma.sql`
+    SELECT grade, COUNT(*) AS count
+    FROM (
+      -- 판매 등록 카드 (포토카드 종류별로 1개씩)
+      SELECT DISTINCT ON (p.id)
+        p.grade
+      FROM "UserPhotocards" upc
+      JOIN "Photocards" p ON upc.photocards_id = p.id
+      WHERE upc.trade_info_id IS NOT NULL
+        AND p.creator_id = ${userId}
+      
+      UNION ALL
+
+      -- 교환 제안 카드 (제안 내역별로 1개씩)
+      SELECT p.grade
+      FROM "TradeHistories" th
+      JOIN "UserPhotocards" upc ON th.offered_card_id = upc.id
+      JOIN "Photocards" P ON upc.photocards_id = p.id
+      WHERE th.requester_id = ${userId}
+        AND th.trade_status = 'PENDING'
+    ) AS listings
+    GROUP BY grade
+  `;
+
+  return prisma.$queryRaw(query);
+}
+
+/**
+ * Raw Query를 사용해 내 판매/교환 목록 조회
+ * @param {object} options - 조회 옵션
+ * @returns {Promise<object[]>} 필터링 및 페이지네이션된 목록
+ */
+function findMyListingsByRawQuery({
+  userId,
+  whereClauses,
+  orderBy,
+  page,
+  pageSize,
+}) {
+  const offset = (page - 1) * pageSize;
+
+  const query = Prisma.sql`
+    SELECT *
+    FROM (
+      -- 판매 등록 카드 (포토카드 종류별로 1개씩)
+      SELECT DISTINCT ON (p.id)
+          upc.id,
+          p.name,
+          p.grade,
+          p.genre,
+          p.image_url,
+          upc.owner_id,
+          upc."createdAt",
+          upc."updatedAt",
+          'sell' AS "listingType"
+      FROM "UserPhotocards" upc
+      JOIN "Photocards" p ON upc.photocards_id = p.id
+      WHERE upc.trade_info_id IS NOT NULL
+        AND p.creator_id = ${userId}
+
+      UNION ALL 
+
+      -- 교환 제안 카드 (제안 내역별로 1개씩)
+      SELECT 
+          upc.id,
+          p.name,
+          p.grade,
+          p.genre,
+          p.image_url,
+          upc.owner_id,
+          upc."createdAt",
+          upc."updatedAt",
+          'trade' AS "listingType"
+      FROM "TradeHistories" th
+      JOIN "UserPhotocards" upc ON th.offered_card_id = upc.id -- 근데 TradeHistories 테이블은 upc가 아니라 p에 연결되어 있는데.. 그럼 th.offered_card_is = p.id여야하는거 아냐?
+      JOIN "Photocards" p ON upc.photocards_id = p.id
+      WHERE th.requester_id = ${userId}
+        AND th.trade_status = 'PENDING'
+    ) AS listings
+    WHERE ${Prisma.join(whereClauses, " AND ")}
+    ORDER BY ${Prisma.raw(orderBy)}
+    LIMIT ${pageSize}
+    OFFSET ${offset}
+  `;
+
+  return prisma.$queryRaw(query);
 }
 
 export default {
@@ -250,9 +495,11 @@ export default {
   findStatusTrue,
   deleteTradePost,
   findAll,
-  // findAndLockTradePostById,
   findByPostId,
   countSoldByPostId,
   findTradeHistoriesByRequesterId,
   findUserPhotocardsByUserId,
+  countMyListingsByRawQuery,
+  groupMyListingsByRawQuery,
+  findMyListingsByRawQuery,
 };
