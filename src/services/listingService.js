@@ -402,8 +402,8 @@ async function getMyListings({
   // 2. WHERE 절 동적 생성
   const whereClauses = [Prisma.sql`1=1`]; // AND로만 연결할 수 있도록 하는 항상 참인 기본 조건
 
-  if (grade) whereClauses.push(Prisma.sql`grade = ${grade}`);
-  if (genre) whereClauses.push(Prisma.sql`genre = ${genre}`);
+  if (grade) whereClauses.push(Prisma.sql`grade = ${grade}::"Grade"`);
+  if (genre) whereClauses.push(Prisma.sql`genre = ${genre}::"Genre"`);
   if (keyword) whereClauses.push(Prisma.sql`name ILIKE ${"%" + keyword + "%"}`);
   if (saleType) whereClauses.push(Prisma.sql`"listingType" = ${saleType}`);
 

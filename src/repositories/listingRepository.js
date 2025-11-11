@@ -471,7 +471,7 @@ function findMyListingsByRawQuery({
       WHERE th.requester_id = ${userId}
         AND th.trade_status = 'PENDING'
     ) AS listings
-    WHERE ${Prisma.join(whereClauses, "AND")}
+    WHERE ${Prisma.join(whereClauses, " AND ")}
     ORDER BY ${Prisma.raw(orderBy)}
     LIMIT ${pageSize}
     OFFSET ${offset}
