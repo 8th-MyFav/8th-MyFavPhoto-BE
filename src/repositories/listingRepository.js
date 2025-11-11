@@ -447,6 +447,12 @@ function findMyListingsByRawQuery({
           upc."createdAt",
           upc."updatedAt",
           'sell' AS "listingType"
+          ,
+          (SELECT COUNT(*) 
+           FROM "UserPhotocards" upc2 
+           WHERE upc2.photocards_id = p.id 
+             AND upc2.is_sale = true
+          ) AS count
       FROM "UserPhotocards" upc
       JOIN "Photocards" p ON upc.photocards_id = p.id
       WHERE upc.trade_info_id IS NOT NULL
@@ -464,7 +470,8 @@ function findMyListingsByRawQuery({
           upc.owner_id,
           upc."createdAt",
           upc."updatedAt",
-          'trade' AS "listingType"
+          'trade' AS "listingType",
+          1 AS count
       FROM "TradeHistories" th
       JOIN "UserPhotocards" upc ON th.offered_card_id = upc.id -- 근데 TradeHistories 테이블은 upc가 아니라 p에 연결되어 있는데.. 그럼 th.offered_card_is = p.id여야하는거 아냐?
       JOIN "Photocards" p ON upc.photocards_id = p.id
