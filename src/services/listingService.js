@@ -453,7 +453,12 @@ async function getMyListings({
     name: listing.name,
     grade: listing.grade,
     genre: listing.genre,
-    available: listing.owner_id === userId ? 1 : 0, // 판매/교환 가능 여부
+    available:
+      listing.owner_id !== userId
+        ? 0
+        : listing.listingType === "sell"
+        ? Number(listing.count)
+        : 1, // 판매: 남은 수량, 교환: 1, 품절/교환완료: 0
     image_url: listing.image_url,
     createdAt: listing.createdAt,
     updatedAt: listing.updatedAt,
